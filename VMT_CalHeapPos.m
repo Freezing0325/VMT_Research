@@ -7,14 +7,12 @@ function [RealE, HeapPos] = VMT_CalHeapPos(NormE, CompStatus, CalMethod, ActiveS
 %   ActiveStatus    单元激活情况，只有一行，不输入时，认为所有单元均激活。
     CompensationH_0 = 0.375;
     NormalH_0 = 0.5;
+
     HMat = [NormalH_0, CompensationH_0];
-    HMax_Mat = HMat ./ sqrt(2 * HMat.^2 + 3);
     theta_0_Mat = atan(HMat);
     if (CalMethod == 1)
         U_snap_Mat = HMat - HMat ./ sqrt(2*HMat.^2 + 3);
         F_snap_Mat = 2 * HMat.^3 ./ (3 * sqrt(3) .* sqrt(HMat.^2 + 1));
-        syms H H_0;
-        F = H / sqrt(H^2 + 1) * ((H_0^2 + 1) / (H^2 + 1) - 1);
     elseif (CalMethod == 2)
         theta_m_Mat = atan(sqrt((1 + HMat.^2).^(1/3) - 1));
         U_snap_Mat = HMat - sqrt((1 + HMat.^2).^(1/3) - 1);
@@ -46,20 +44,9 @@ function [RealE, HeapPos] = VMT_CalHeapPos(NormE, CompStatus, CalMethod, ActiveS
             end
             IfThatComp = CompStatus(SortIndex(j));
             IsDown = (j < i) || (~ActiveStatus(j));
-            if (CalMethod == 1)
-                ThisF = subs(F, H_0, HMat(IfThatComp + 1));
-                SolutionPos = [-Inf, -HMax_Mat(IfThatComp + 1)] * (IsDown * 2 - 1);
-                U_all(j) = HMat(IfThatComp + 1) - vpasolve(ThisF == RealE(SortIndex(i)) / RealE(SortIndex(j)) * F_snap_Mat(IfThisComp + 1), SolutionPos);
-            elseif (CalMethod == 2)
-                U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, 2);
-                if (~isreal(U_all(j)))
-                    U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, -2);
-                end
-            elseif (CalMethod == 3)
-                U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, 3);
-                if (~isreal(U_all(j)))
-                    U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, -3);
-                end
+            U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, CalMethod);
+            if (~isreal(U_all(j)))
+                U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, -CalMethod);
             end
         end
         TempHeapPos(i) = sum(U_all);
