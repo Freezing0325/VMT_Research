@@ -1,7 +1,7 @@
-function [RealK, HeapPos] = VMT_CalHeapPos(NormK, CompStatus, CalMethod, ActiveStatus)
+function [RealE, HeapPos] = VMT_CalHeapPos(NormE, CompStatus, CalMethod, ActiveStatus)
 %VMT_CalHeapPos     计算当前一侧配置的串联VMT所对应的峰值位置。
 %
-%   NormK           所有单元的归一化刚度
+%   NormE           所有单元的归一化刚度
 %   CompStatus      补偿情况，1表示有补偿，0表示无补偿
 %   CalMethod       计算算法，1：求解非线性方程；2：线性模型：泰勒级数2阶拟合；3：非线性模型：泰勒级数3阶拟合。
 %   ActiveStatus    单元激活情况，只有一行，不输入时，认为所有单元均激活。
@@ -24,11 +24,11 @@ function [RealK, HeapPos] = VMT_CalHeapPos(NormK, CompStatus, CalMethod, ActiveS
         F_snap_Mat = 2 * HMat.^3 ./ (3 * sqrt(3) .* sqrt(HMat.^2 + 1));
     end
 
-    CorrK = F_snap_Mat(1) / F_snap_Mat(2);
-    RealK = (CorrK - 1) * CompStatus .* NormK + NormK;
+    CorrE = F_snap_Mat(1) / F_snap_Mat(2);
+    RealE = (CorrE - 1) * CompStatus .* NormE + NormE;
 
-    [~, SortIndex] = sort(NormK);
-    UnitSum = size(NormK, 2);
+    [~, SortIndex] = sort(NormE);
+    UnitSum = size(NormE, 2);
     TempHeapPos = zeros(1, UnitSum);
     if (~exist('ActiveStatus', 'var') || size(ActiveStatus, 1) == 0)
         ActiveStatus = ones(1, UnitSum);
@@ -49,7 +49,7 @@ function [RealK, HeapPos] = VMT_CalHeapPos(NormK, CompStatus, CalMethod, ActiveS
             if (CalMethod == 1)
                 ThisF = subs(F, H_0, HMat(IfThatComp + 1));
                 SolutionPos = [-Inf, -HMax_Mat(IfThatComp + 1)] * (IsDown * 2 - 1);
-                U_all(j) = HMat(IfThatComp + 1) - vpasolve(ThisF == RealK(SortIndex(i)) / RealK(SortIndex(j)) * F_snap_Mat(IfThisComp + 1), SolutionPos);
+                U_all(j) = HMat(IfThatComp + 1) - vpasolve(ThisF == RealE(SortIndex(i)) / RealE(SortIndex(j)) * F_snap_Mat(IfThisComp + 1), SolutionPos);
             elseif (CalMethod == 2)
                 U_all(j) = VMT_SingleGetU(RealE(SortIndex(j)), HMat(IfThatComp + 1), RealE(SortIndex(i)) * F_snap_Mat(IfThisComp + 1), IsDown, 2);
                 if (~isreal(U_all(j)))
