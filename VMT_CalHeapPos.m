@@ -5,24 +5,14 @@ function [RealE, HeapPos] = VMT_CalHeapPos(NormE, CompStatus, CalMethod, ActiveS
 %   CompStatus      补偿情况，-1表示增加性补偿，0表示无补偿，1表示减缩性补偿
 %   CalMethod       计算算法，1：求解非线性方程；2：线性模型：泰勒级数2阶拟合；3：非线性模型：泰勒级数3阶拟合。
 %   ActiveStatus    单元激活情况，只有一行，不输入时，认为所有单元均激活。
-    OutputH_0 = 0.125;
+
     NormalH_0 = 0.5;
-    CompMinusH_0 = NormalH_0 - OutputH_0;
-    CompPlusH_0 = NormalH_0 + OutputH_0;
+    CompMinusH_0 = 0.375;
+    CompPlusH_0 = 0.625;
     
     HMat = [CompPlusH_0, NormalH_0, CompMinusH_0];
-    theta_0_Mat = atan(HMat);
-    if (CalMethod == 1)
-        U_snap_Mat = HMat - HMat ./ sqrt(2*HMat.^2 + 3);
-        F_snap_Mat = 2 * HMat.^3 ./ (3 * sqrt(3) .* sqrt(HMat.^2 + 1));
-    elseif (CalMethod == 2)
-        theta_m_Mat = atan(sqrt((1 + HMat.^2).^(1/3) - 1));
-        U_snap_Mat = HMat - sqrt((1 + HMat.^2).^(1/3) - 1);
-        F_snap_Mat = sin(theta_m_Mat) - tan(theta_m_Mat) .* cos(theta_0_Mat);
-    elseif (CalMethod == 3)
-        U_snap_Mat = HMat - HMat ./ sqrt(2*HMat.^2 + 3);
-        F_snap_Mat = 2 * HMat.^3 ./ (3 * sqrt(3) .* sqrt(HMat.^2 + 1));
-    end
+
+    [F_snap_Mat, U_snap_Mat] = VMT_SingleGetFm(1, HMat, CalMethod);
 
     CorrE = F_snap_Mat(2) ./ F_snap_Mat;
     RealE = NormE .* CorrE(CompStatus + 2);

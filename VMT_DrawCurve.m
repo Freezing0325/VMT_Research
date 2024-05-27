@@ -1,28 +1,31 @@
-% function [U_Load, AllF] = VMT_DrawCurve(E, H_0, CalMethod)
+function [U_Load, AllF] = VMT_DrawCurve(E, H_0, CalMethod)
+%VMT_DrawCurve   对于串联VMT单元，根据其刚度和初始高度绘制力-位移曲线
+%
+%   E               刚度
+%   H_0             初始高度
+%   CalMethod       计算方法
+%
+%   输出：
+%   U_Load          曲线的位移
+%   AllF            曲线的力
 
-    E = RealE_L;
-    H_0 = [0.5 0.375 0.625];
-    CalMethod = 1;
     A = 1;    
     syms U_temp H_0_temp EA_temp;
     theta = atan(H_0_temp - U_temp);
     switch CalMethod
         case 1
             F = EA_temp * ((1 + H_0_temp^2) / (1 + (H_0_temp - U_temp)^2) - 1) * sin(theta);
-            MaxPt = H_0_temp / sqrt(2 * H_0_temp^2 + 3);
-            Fm = 2 * E .* A .* H_0.^3 ./ (3 * sqrt(3 * (H_0.^2 + 1)));
         case 2
-            
+            F = 2 * EA_temp * (H_0_temp - U_temp) * (((H_0_temp - U_temp)^2 + 1)^(-1/2)-(H_0_temp^2+1)^(-1/2));
     end
+    [Fm, MaxPt_all] = VMT_SingleGetFm(E * A, H_0, CalMethod);
     [~, ChangeIndex] = sort(Fm);
     
     UnitNum = size(E, 2);
     F_all = sym('F', [1, UnitNum]);
     U_all = sym('U', [1, UnitNum]);
-    MaxPt_all = zeros(1, 3);
     for i = 1: UnitNum
         F_all(i) = subs(F, {'U_temp', 'H_0_temp', 'EA_temp'}, {U_all(i), H_0(i), E(i) * A});
-        MaxPt_all(i) = subs(MaxPt, {'H_0_temp'}, H_0(i));
     end
     
     timestep = 0: 0.005: 1;
@@ -89,4 +92,4 @@
     
     figure(1);
     plot(U_Load, AllF);
-% end
+end

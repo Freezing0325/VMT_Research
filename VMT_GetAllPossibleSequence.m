@@ -1,7 +1,18 @@
-function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftNormK, RightNormK, CompSide, OriginStatus, ActiveSum, FindSequence)
-    
+function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, ActiveSum, FindSequence)
+%VMT_GetAllPossibleSequence         获得已有设计通过预配置可以获得的所有可能序列
+%
+%   LeftNormE       左侧单元的归一化刚度
+%   RightNormE      右侧单元的归一化刚度
+%   LeftComp        左侧补偿情况
+%   RightComp       右侧补偿情况
+%   OriginStatus    初始状态
+%   CalMethod       计算算法，1：求解非线性方程；2：线性模型：泰勒级数2阶拟合；3：非线性模型：泰勒级数3阶拟合。
+%   ActiveSum       两侧单元激活数
+%   FindSequence    待查找的序列
 
-    UnitSum = size(LeftNormK, 2);
+
+
+    UnitSum = size(LeftNormE, 2);
     InactiveSum = UnitSum - ActiveSum;
 
     AllSequence = zeros(1, 2^(ActiveSum-1));
@@ -10,7 +21,7 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
     ChangeRange = ones(InactiveSum * 2, 1) * [2, 1, UnitSum];
     AllDesignSum = 0;
     OKDesignSum = 0;
-    if (size(FindSequence, 1) == 0)
+    if (size(FindSequence, 1) == 0 || ~exist('FindSequence', 'var'))
         FindSequence = zeros(1, ActiveSum); % [1 0 1 0 1 0 1];
     end
     
@@ -21,6 +32,7 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
         
         [ThisCombination, ~] = GetCombination(ChangeRange, ChangeNo, ThisCombination);
         
+        % 要求前InactiveSum个数必须是升序的，后InactiveSum个数也是升序的。
         SortFlag = true;
         for i = 1: InactiveSum - 1
             if (ThisCombination(i) >= ThisCombination(i + 1) - 10e-6 || ...
@@ -32,11 +44,12 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
         if (~SortFlag)
             continue;
         end
+
         AllDesignSum = AllDesignSum + 1;
         ThisActiveStatus = ones(2, UnitSum);
         ThisActiveStatus(1, ThisCombination(1: InactiveSum)) = 0;
         ThisActiveStatus(2, ThisCombination(InactiveSum + 1: 2 * InactiveSum)) = 0;
-        [ThisSequence, MaxForceDiff] = VMT_GetSequence(LeftNormK, RightNormK, CompSide, OriginStatus, 3, ThisActiveStatus);
+        [ThisSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, ThisActiveStatus);
         if (MaxForceDiff < 1 && ThisSequence(1) == OriginStatus)
             OKDesignSum = OKDesignSum + 1;
             if (all(FindSequence == ThisSequence))

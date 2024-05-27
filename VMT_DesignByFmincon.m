@@ -113,7 +113,9 @@ for i = 1: 2 * StepSum
     fprintf('%.4f  ', RealE(i));
 end
 fprintf('\n');
-[PredSequence, MaxForceDiff] = VMT_GetSequence([1, BestE(1: StepSum - 1)], [1, BestE(StepSum: 2 * (StepSum - 1))] , CompSide, OriginStatus, 2, []);
+LeftComp = CompSide == -1;
+RightComp = CompSide == 1;
+[PredSequence, MaxForceDiff] = VMT_GetSequence([1, BestE(1: StepSum - 1)], [1, BestE(StepSum: 2 * (StepSum - 1))] , LeftComp, RightComp, OriginStatus, 2, []);
 fprintf('预期序列：\n');
 for i = 1: StepSum
     fprintf('%d  ', PredSequence(i));

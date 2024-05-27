@@ -1,4 +1,10 @@
 function QQ_Report(qqnum,message)
+%QQ_Report      利用QQ汇报一条消息
+%   
+%   qqnum       目标QQ号，即消息发送的对象
+%   message     消息字符串
+
+
     if (nargin==1)
         message = '程序监控测试';
     end

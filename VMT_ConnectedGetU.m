@@ -8,9 +8,10 @@ function U = VMT_ConnectedGetU(E, H_0, F, Status, CalMethod)
 %   CalMethod       计算方法，1：非线性精确求解，
 %                   2：线性小变形单元（弹簧），二阶泰勒级数拟合
 %                   3：线弹性大变形单元（均匀），三阶泰勒级数拟合
-U = 0;
-UnitSum = size(E, 2);
-for i = 1: UnitSum
-    U = U + VMT_SingleGetU(E(i), H_0(i), F, Status(i), CalMethod);
-end
+
+    U = 0;
+    UnitSum = size(E, 2);
+    for i = 1: UnitSum
+        U = U + VMT_SingleGetU(E(i), H_0(i), F, Status(i), CalMethod);
+    end
 end
