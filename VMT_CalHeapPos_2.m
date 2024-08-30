@@ -4,9 +4,10 @@ function [RealE, HeapPos] = VMT_CalHeapPos_2(NormE, CompStatus)
 %   NormK           所有单元的归一化刚度
 %   CompStatus      补偿情况，1表示有补偿，0表示无补偿
 
-    NormalH_0 = 0.5;
-    CompMinusH_0 = 0.375;
-    CompPlusH_0 = 0.625;
+    global a Normal_h CompPlus_h CompMinus_h;
+    NormalH_0 = Normal_h / a;     %0.5
+    CompMinusH_0 = CompMinus_h / a;  %0.375
+    CompPlusH_0 = CompPlus_h / a;   %0.625
     
     HMat = [CompPlusH_0, NormalH_0, CompMinusH_0];
     

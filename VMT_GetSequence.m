@@ -15,16 +15,16 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, L
 %   MaxForceDiff    会影响序列变化的最大的力差异，用输出单元的突跳最大力得到比值
 
     SingleSideComp = true;  % 仅进行单侧的补偿
-    OutputH = 0.0625;
-    OutputL = 1.25;
-    OutputE = 500;
+    global a Normal_h OutputE Output_h Output_a;
+    OutputH = Output_h / a;
+    OutputL = Output_a / a;
     [OutputFm, ~] = VMT_SingleGetFm(OutputE, OutputH / OutputL, CalMethod);
-    [Fm, ~] = VMT_SingleGetFm(1, 0.5, CalMethod);
+    [Fm, ~] = VMT_SingleGetFm(1, Normal_h / a, CalMethod);
     % OutputFm = 2 * OutputE * 2/(3*sqrt(3)) * (OutputH/OutputL)^3 / sqrt((OutputH/OutputL)^2 + 1);
     % Fm = 1/(6*sqrt(15)); 
 
     UnitSum = size(LeftNormE, 2);
-    if (size(ActiveStatus, 1) == 0 || ~exist('ActiveStatus', 'var'))
+    if (~exist('ActiveStatus', 'var') || size(ActiveStatus, 1) == 0)
         ActiveStatus = ones(2, UnitSum);
     end
     LeftActiveStatus = ActiveStatus(1, :);

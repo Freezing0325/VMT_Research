@@ -10,15 +10,19 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Mi
     if (con_CallTimes == 1)
 
         % 代值，获得串联单元的峰值位置
-       
+        
         X_mL = X_m(1, :);
         X_mR = X_m(2, :);
-    
-        OutputH = 0.0625;
-        OutputL = 1.25;
-        OutputE = 600;
+
+        global a Normal_h OutputE Output_h Output_a;
+        OutputH = Output_h / a;
+        OutputL = Output_a / a;
         OutputFm = 2 * OutputE * 2/(3*sqrt(3)) * (OutputH/OutputL)^3 / sqrt((OutputH/OutputL)^2 + 1);
-        Fm = 2*(1-(1+0.5^2)^(-1/3))^(3/2);
+        H_0 = Normal_h / a;
+        Comp_H_0 = H_0 - 2 * OutputH;
+        
+        Fm = 2*(1-(1+H_0^2)^(-1/3))^(3/2);
+        Fm_Comp = 2*(1-(1+Comp_H_0^2)^(-1/3))^(3/2);
     
         % Judge_X_m: 每一步用来判断哪侧先跳变，临时预计峰值位置。
         Delta_HeapPos = ~[OriginStatus, GoalSequence(1: StepSum - 1)] * 2 * OutputH;
@@ -72,9 +76,7 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Mi
         g_ForceDiff = AllForceDiff(AllForceDiff ~= 0);
         g_StepWall = g_StepWall(g_StepWall ~= 0);
     
-        H_0 = 0.5;
-        Comp_H_0 = H_0 - 2 * OutputH;
-        Fm_Comp = 2*(1-(1+Comp_H_0^2)^(-1/3))^(3/2);
+        
     
         CompSide = GoalSequence - [OriginStatus, GoalSequence(1: StepSum - 1)]; 
         LeftComp = CompSide == -1;

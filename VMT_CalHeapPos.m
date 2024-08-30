@@ -6,9 +6,12 @@ function [RealE, HeapPos] = VMT_CalHeapPos(NormE, CompStatus, CalMethod, ActiveS
 %   CalMethod       计算算法，1：求解非线性方程；2：线性模型：泰勒级数2阶拟合；3：非线性模型：泰勒级数3阶拟合。
 %   ActiveStatus    单元激活情况，只有一行，不输入时，认为所有单元均激活。
 
-    NormalH_0 = 0.5;
-    CompMinusH_0 = 0.375;
-    CompPlusH_0 = 0.625;
+    
+
+    global a Normal_h CompPlus_h CompMinus_h;
+    NormalH_0 = Normal_h / a;     %0.5
+    CompMinusH_0 = CompMinus_h / a;  %0.375
+    CompPlusH_0 = CompPlus_h / a;   %0.625
     
     HMat = [CompPlusH_0, NormalH_0, CompMinusH_0];
 

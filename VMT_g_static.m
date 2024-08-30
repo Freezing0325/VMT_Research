@@ -13,9 +13,14 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ma
         X_mR = X_m(2, :);
         % X_mL = double(subs(X_m(1, :), TempNormE, NormE));
         % X_mR = double(subs(X_m(2, :), TempNormE, NormE));
+        global a Normal_h Output_h;
+        OutputH = Output_h / a;
+        H_0 = Normal_h / a;
+        Comp_H_0 = H_0 - 2 * OutputH;
+        Fm = 2*(1-(1+H_0^2)^(-1/3))^(3/2);
+        Fm_Comp = 2*(1-(1+Comp_H_0^2)^(-1/3))^(3/2);
     
         % Judge_X_m: 每一步用来判断哪侧先跳变，临时预计峰值位置。
-        OutputH = 0.0625;
         Delta_HeapPos = ~[OriginStatus, GoalSequence(1: StepSum - 1)] * 2 * OutputH;
         Judge_X_mL = X_mL + Delta_HeapPos;
         Judge_X_mR = X_mR - Delta_HeapPos;
@@ -42,11 +47,7 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ma
             end
             GoalFunc_static = GoalFunc_static + g_DisDiff + g_ForceDiff;
         end
-        H_0 = 0.5;
-        Comp_H_0 = H_0 - 2 * OutputH;
-        Fm = 2*(1-(1+H_0^2)^(-1/3))^(3/2);
-        Fm_Comp = 2*(1-(1+Comp_H_0^2)^(-1/3))^(3/2);
-    
+        
         CompSide = GoalSequence - [OriginStatus, GoalSequence(1: StepSum - 1)]; 
         LeftComp = CompSide == -1;
         RightComp = CompSide == 1;
