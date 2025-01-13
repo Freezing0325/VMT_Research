@@ -10,7 +10,7 @@ function VMT_Init(CalMode)
             Normal_h = 21.354;
             CompMinus_h = 11.368;
             CompPlus_h = 31.354;
-            OutputE = 115;
+            OutputE = 30.957;
             Output_h = 5;
             Output_a = 50;
             fprintf('实验模式参数设置完毕。\n');

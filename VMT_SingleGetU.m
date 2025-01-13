@@ -22,9 +22,9 @@ switch CalMethod
         U = H_0 - H_solve;
     case -2
         theta_m = atan(sqrt((1 + H_0^2)^(1/3) - 1));
-        Fm = 2 * (sin(theta_m) - tan(theta_m) .* cos(atan(H_0)));
-        Eqn_a = 2 * (-(2/(H_0^2 + 1)^(5/6) - 5/(2 * (H_0^2 + 1)^(7/6))));
-        Eqn_b = 2 * 3 * ((H_0^2 + 1)^(1/3) - 1)^(1/2) / (2 * (H_0^2 + 1)^(5/6));
+        Fm = 2 * (sin(theta_m) ./ cos(atan(H_0)) - tan(theta_m));
+        Eqn_a = 2 * (-(2/(H_0^2 + 1)^(1/3) - 5/(2 * (H_0^2 + 1)^(2/3))));
+        Eqn_b = 2 * 3 * ((H_0^2 + 1)^(1/3) - 1)^(1/2) / (2 * (H_0^2 + 1)^(1/3));
         Eqn_c = 0;
         Eqn_d = F / E - Fm; %RealE(SortIndex(i)) / RealE(SortIndex(j)) * F_snap_Mat(IfThisComp + 1) - Fm;
         Eqn_p = Eqn_c / Eqn_a - (Eqn_b / Eqn_a)^2 / 3;
@@ -33,8 +33,8 @@ switch CalMethod
         Eqn_theta = acos(-Eqn_q / (2 * Eqn_r)) / 3;
         U = H_0 - sqrt((1 + H_0^2).^(1/3) - 1) -(2 * Eqn_r^(1/3) * cos(Eqn_theta) - Eqn_b / (3 * Eqn_a));
     case 2
-        Eqn_a = 2 * (-(-1.5 * H_0 ./ (H_0.^2 + 1) .^ (5/2)));
-        Eqn_b = 2 * (-(-H_0.^2 ./ (H_0.^2 + 1) .^ (3/2)));
+        Eqn_a = 2 * (-(-1.5 * H_0 ./ (H_0.^2 + 1) .^ 2));
+        Eqn_b = 2 * (-(-H_0.^2 ./ (H_0.^2 + 1)));
         Eqn_c = -F / E * (Status * 2 - 1);
         Eqn_Delta = Eqn_b^2 - 4 * Eqn_a * Eqn_c;
         U = -(sqrt(Eqn_Delta) - Eqn_b) / (2 * Eqn_a);

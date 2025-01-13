@@ -7,7 +7,7 @@ GoalSequence = [1 0 1];
 StepSum = size(GoalSequence, 2);
 
 % 允许的最大归一化刚度
-MaxNormE = 6;
+MaxNormE = 7.2;
 
 % 允许的最小归一化刚度的差值，如果过小，在实际运行中，一侧的串联单元就不一定按照从小到大的顺序突跳
 MinNormEDiff = 0.25;
@@ -35,7 +35,9 @@ for i = 2: StepSum
     CompSum(i) = CompSum(i - 1) + CompSum(i);
 end
 % 获得各个零势能点的位置
-OutputH = 0.0625;
+global Output_h a;
+OutputH = Output_h / a;
+% OutputH = 0.0625;
 U_0 = [0, (1: StepSum) - CompSum * OutputH * 2];    
 
 
