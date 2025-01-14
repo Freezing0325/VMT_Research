@@ -110,8 +110,10 @@ Func_3_nonlinear = (4*H_0^4 - 10 * H_0^2 + 1)/ (H_0^2 + 1)^(7/2);
 Func_4_nonlinear = (10*H_0^5-45*H_0^3+15*H_0)/(2*(H_0^2+1)^(9/2));
 F_app_sym = Func_1_nonlinear * U + Func_2_nonlinear * U^2 +  Func_3_nonlinear * U^3 + Func_4_nonlinear * U^4;
 %%
+% 所有两行，上一行为初始，下一行为最终
+
 % B
-%[PredSequence, MaxForceDiff] = VMT_GetSequence([1.661	1.905	2.334	6.755	10.823 12.826], [1.661	1.905	2.334	4.017	7.878 9.320], [0 1 1 1 1 1], [0 1 1 0 1 1], 1, 2, [])
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([1.661	1.905	2.334	6.755	10.823 12.826], [1.661	1.905	2.334	4.017	7.878 9.320], [0 1 1 1 1 1], [0 1 1 0 1 1], 1, 2, [])
 % [PredSequence, MaxForceDiff] = VMT_GetSequence([1.547	1.905	2.334	6.755	10.823 12.826], [1.661	1.905	2.334	5.02	8.820 9.320], [0 1 1 1 1 1], [0 1 1 0 1 1], 1, 2, [])
 
 % R
