@@ -1,4 +1,4 @@
-function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, MaxNormE)
+function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, CalMethod, MaxNormE)
 % Fmincon要优化的目标函数
     global g_CallTimes g_RunTime;
     persistent GoalFunc_static;
@@ -17,8 +17,8 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ma
         OutputH = Output_h / a;
         H_0 = Normal_h / a;
         Comp_H_0 = H_0 - 2 * OutputH;
-        Fm = 2*(1-(1+H_0^2)^(-1/3))^(3/2);
-        Fm_Comp = 2*(1-(1+Comp_H_0^2)^(-1/3))^(3/2);
+        [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
+        [Fm_Comp, ~] = VMT_SingleGetFm(1, Comp_H_0, CalMethod);
     
         % Judge_X_m: 每一步用来判断哪侧先跳变，临时预计峰值位置。
         Delta_HeapPos = ~[OriginStatus, GoalSequence(1: StepSum - 1)] * 2 * OutputH;

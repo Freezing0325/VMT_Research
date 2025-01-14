@@ -7,7 +7,7 @@ GoalSequence = [1 0 1];
 StepSum = size(GoalSequence, 2);
 
 % 允许的最大归一化刚度
-MaxNormE = 6;
+MaxNormE = 7.2;
 
 % 允许的最小归一化刚度的差值，如果过小，在实际运行中，一侧的串联单元就不一定按照从小到大的顺序突跳
 MinNormEDiff = 0.25;
@@ -17,6 +17,10 @@ MinDisDiff = 0.1;
 MinStepWall = 0.2;
 % 允许的最大的结束时的力差异，如果过大，那么在设计的序列切换结束后可能不稳定。
 MaxOutDisDiff = 0.05;
+% 允许的最大的突跳前力差异与输出单元突跳阈值之比，如果过于超过1，那么有可能在串联单元突跳前就使输出单元突跳至另一状态，或者在不需要突跳的时候发生突跳。
+MaxFDiff = 2;
+
+CalMethod = 2;
 
 % 迭代开始的归一化刚度配置
 % BeginNormE = [1.5 2, 1.5 2];
@@ -35,7 +39,9 @@ for i = 2: StepSum
     CompSum(i) = CompSum(i - 1) + CompSum(i);
 end
 % 获得各个零势能点的位置
-OutputH = 0.0625;
+global Output_h a;
+OutputH = Output_h / a;
+% OutputH = 0.0625;
 U_0 = [0, (1: StepSum) - CompSum * OutputH * 2];    
 
 
@@ -80,17 +86,17 @@ g_CallTimes = 0;
 con_CallTimes = 0;
 fprintf('开始迭代计算，过程可能要很久。\n')
 AllRunTime = tic;
-[BestE, Bestg] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], U_0, [X_mL; X_mR], GoalSequence, OriginStatus, MaxNormE), ...
+[BestE, Bestg] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], U_0, [X_mL; X_mR], GoalSequence, OriginStatus, CalMethod, MaxNormE), ...
                         BeginNormE, A_SortE, B_SortE, [], [], 1 * ones(1, 2 * (StepSum - 1)), MaxNormE * ones(1, 2 * (StepSum - 1)), ...
-                        @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], [X_mL; X_mR], GoalSequence, OriginStatus, U_0, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff));
+                        @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], [X_mL; X_mR], GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff));
 toc(AllRunTime);
 
 % QQ_Report('1603441246', 'Matlab算完了噢~');
 
 %% 整理输出结果
 
-[R_L, H_L] = VMT_CalHeapPos_2([1, BestE(1: StepSum - 1)], LeftComp);
-[R_R, H_R] = VMT_CalHeapPos_2([1, BestE(StepSum: 2 * (StepSum - 1))], RightComp);
+[R_L, H_L] = VMT_CalHeapPos([1, BestE(1: StepSum - 1)], LeftComp, CalMethod);
+[R_R, H_R] = VMT_CalHeapPos([1, BestE(StepSum: 2 * (StepSum - 1))], RightComp, CalMethod);
 
 Delta_HeapPos = ~[OriginStatus, GoalSequence(1: StepSum - 1)] * 2 * OutputH;
 Judge_H_L = double(H_L + Delta_HeapPos);
@@ -115,7 +121,7 @@ end
 fprintf('\n');
 LeftComp = CompSide == -1;
 RightComp = CompSide == 1;
-[PredSequence, MaxForceDiff] = VMT_GetSequence([1, BestE(1: StepSum - 1)], [1, BestE(StepSum: 2 * (StepSum - 1))] , LeftComp, RightComp, OriginStatus, 2, []);
+[PredSequence, MaxForceDiff] = VMT_GetSequence([1, BestE(1: StepSum - 1)], [1, BestE(StepSum: 2 * (StepSum - 1))] , LeftComp, RightComp, OriginStatus, CalMethod, []);
 fprintf('预期序列：\n');
 for i = 1: StepSum
     fprintf('%d  ', PredSequence(i));

@@ -1,9 +1,9 @@
-function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, ActiveStatus)
+function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNormEA_ka, LeftComp, RightComp, OriginStatus, CalMethod, ActiveStatus)
 %VMT_GetSequence       预测当前配置的VMT所对应的变化序列。
 %
 %   输入参数：
-%   LeftNormE       左侧所有单元的归一化刚度
-%   RightNormE      右侧所有单元的归一化刚度
+%   LeftNormEA_ka       左侧所有单元的归一化刚度
+%   RightNormEA_ka      右侧所有单元的归一化刚度
 %   LeftComp        左侧补偿情况
 %   RightComp       右侧补偿情况
 %   OriginStatus    初始状态
@@ -15,15 +15,13 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, L
 %   MaxForceDiff    会影响序列变化的最大的力差异，用输出单元的突跳最大力得到比值
 
     SingleSideComp = true;  % 仅进行单侧的补偿
-    global a Normal_h OutputE Output_h Output_a;
+    global a Normal_h OutputEA_ka Output_h Output_a;
     OutputH = Output_h / a;
     OutputL = Output_a / a;
-    [OutputFm, ~] = VMT_SingleGetFm(OutputE, OutputH / OutputL, CalMethod);
+    [OutputFm, ~] = VMT_SingleGetFm(OutputEA_ka, OutputH / OutputL, CalMethod);
     [Fm, ~] = VMT_SingleGetFm(1, Normal_h / a, CalMethod);
-    % OutputFm = 2 * OutputE * 2/(3*sqrt(3)) * (OutputH/OutputL)^3 / sqrt((OutputH/OutputL)^2 + 1);
-    % Fm = 1/(6*sqrt(15)); 
 
-    UnitSum = size(LeftNormE, 2);
+    UnitSum = size(LeftNormEA_ka, 2);
     if (~exist('ActiveStatus', 'var') || size(ActiveStatus, 1) == 0)
         ActiveStatus = ones(2, UnitSum);
     end
@@ -37,8 +35,8 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, L
     StepSum = LeftStepSum;
     % LeftComp = CompSide == -1;
     % RightComp = CompSide == 1;
-    [~, HeapPos_Left] = VMT_CalHeapPos(LeftNormE, LeftComp, CalMethod, LeftActiveStatus);
-    [~, HeapPos_Right] = VMT_CalHeapPos(RightNormE, RightComp, CalMethod, RightActiveStatus);
+    [~, HeapPos_Left] = VMT_CalHeapPos(LeftNormEA_ka, LeftComp, CalMethod, LeftActiveStatus);
+    [~, HeapPos_Right] = VMT_CalHeapPos(RightNormEA_ka, RightComp, CalMethod, RightActiveStatus);
     NowStatus = OriginStatus;
     PredSequence = zeros(1, StepSum);
     for i = 1: StepSum
@@ -66,9 +64,9 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, L
         end
         if (PredSequence(i) == 1)
             % 防止出现预先突跳
-            ThisDis = ((Judge_HeapPos_L(i) - U_0(2, i)) / (Judge_HeapPos_R(i) - U_0(2, i)) * RightNormE(i) - LeftNormE(i)) * Fm / OutputFm;
+            ThisDis = ((Judge_HeapPos_L(i) - U_0(2, i)) / (Judge_HeapPos_R(i) - U_0(2, i)) * RightNormEA_ka(i) - LeftNormEA_ka(i)) * Fm / OutputFm;
         else
-            ThisDis = ((Judge_HeapPos_R(i) - U_0(1, i)) / (Judge_HeapPos_L(i) - U_0(1, i)) * LeftNormE(i) - RightNormE(i)) * Fm / OutputFm;
+            ThisDis = ((Judge_HeapPos_R(i) - U_0(1, i)) / (Judge_HeapPos_L(i) - U_0(1, i)) * LeftNormEA_ka(i) - RightNormEA_ka(i)) * Fm / OutputFm;
         end
         MaxForceDiff = max(ThisDis, MaxForceDiff);
     end

@@ -1,4 +1,4 @@
-function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff)
+function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff)
 % Fmincon要满足的约束条件
     global con_CallTimes con_RunTime;
     persistent g_static h_static;
@@ -14,15 +14,15 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Mi
         X_mL = X_m(1, :);
         X_mR = X_m(2, :);
 
-        global a Normal_h OutputE Output_h Output_a;
+        global a Normal_h OutputEA_ka Output_h Output_a;
         OutputH = Output_h / a;
         OutputL = Output_a / a;
-        OutputFm = 2 * OutputE * 2/(3*sqrt(3)) * (OutputH/OutputL)^3 / sqrt((OutputH/OutputL)^2 + 1);
+        [OutputFm, ~] = VMT_SingleGetFm(OutputEA_ka, OutputH/OutputL, CalMethod);
         H_0 = Normal_h / a;
         Comp_H_0 = H_0 - 2 * OutputH;
         
-        Fm = 2*(1-(1+H_0^2)^(-1/3))^(3/2);
-        Fm_Comp = 2*(1-(1+Comp_H_0^2)^(-1/3))^(3/2);
+        [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
+        [Fm_Comp, ~] = VMT_SingleGetFm(1, Comp_H_0, CalMethod);
     
         % Judge_X_m: 每一步用来判断哪侧先跳变，临时预计峰值位置。
         Delta_HeapPos = ~[OriginStatus, GoalSequence(1: StepSum - 1)] * 2 * OutputH;
@@ -66,9 +66,9 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Mi
                 end
             else
                 if (GoalSequence(i) == 1)
-                    AllForceDiff(i) = ((Judge_X_mL(i) - U_0(i)) / (Judge_X_mR(i) - U_0(i)) * TempNormE(StepSum + i) - TempNormE(i)) * Fm / OutputFm - 1;
+                    AllForceDiff(i) = ((Judge_X_mL(i) - U_0(i)) / (Judge_X_mR(i) - U_0(i)) * TempNormE(StepSum + i) - TempNormE(i)) * Fm / OutputFm - MaxFDiff;
                 else
-                    AllForceDiff(i) = ((Judge_X_mR(i) - U_0(i)) / (Judge_X_mL(i) - U_0(i)) * TempNormE(i) - TempNormE(StepSum + i)) * Fm / OutputFm - 1;
+                    AllForceDiff(i) = ((Judge_X_mR(i) - U_0(i)) / (Judge_X_mL(i) - U_0(i)) * TempNormE(i) - TempNormE(StepSum + i)) * Fm / OutputFm - MaxFDiff;
                 end
             end
         end
