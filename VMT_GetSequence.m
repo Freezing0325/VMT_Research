@@ -40,12 +40,13 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNorm
     NowStatus = OriginStatus;
     PredSequence = zeros(1, StepSum);
     for i = 1: StepSum
-        PredSequence(i) = HeapPos_Left(i) < HeapPos_Right(i) + 4 * OutputH * (NowStatus - 1);
+        PredSequence(i) = HeapPos_Left(i) < HeapPos_Right(i) + 4 * OutputH * (NowStatus - OriginStatus);
         NowStatus = PredSequence(i);
     end
 
     CompInfo = [LeftComp; RightComp];
-    ChangeInfo = PredSequence - [OriginStatus, PredSequence(1: StepSum - 1)];
+    PredSequence_Hat = [OriginStatus, PredSequence(1: StepSum - 1)];
+    ChangeInfo = PredSequence - PredSequence_Hat;
     U_0 = zeros(2, StepSum);
     for i = 2: StepSum
         U_0(:, i) = U_0(:, i - 1) + 1 - CompInfo(:, i - 1) * OutputH * (2 + SingleSideComp * 2) + [-1; 1] * ChangeInfo(:, i - 1) * OutputH * 2;
@@ -53,11 +54,9 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNorm
     
     MaxForceDiff = 0;
     % 在某阶段前的变形序列发生之后，这一步用来判断的峰值位置
-    Delta_HeapPos = ~[OriginStatus, PredSequence(1: StepSum - 1)] * 2 * OutputH;
+    Delta_HeapPos = (OriginStatus - PredSequence_Hat) * 2 * OutputH;
     Judge_HeapPos_L = HeapPos_Left + Delta_HeapPos;
     Judge_HeapPos_R = HeapPos_Right - Delta_HeapPos;
-    % Real_HeapPos_L = HeapPos_Left + (~(PredSequence & [OriginStatus, PredSequence(1: StepSum - 1)])) * 2 * OutputH;
-    % Real_HeapPos_R = HeapPos_Right - (~(PredSequence | [OriginStatus, PredSequence(1: StepSum - 1)])) * 2 * OutputH;
     for i = 1: StepSum
         if (ChangeInfo(i) == 0)
             continue;

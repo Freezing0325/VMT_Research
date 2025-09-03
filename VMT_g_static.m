@@ -19,16 +19,18 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ca
         Comp_H_0 = H_0 - 2 * OutputH;
         [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
         [Fm_Comp, ~] = VMT_SingleGetFm(1, Comp_H_0, CalMethod);
+        GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
+        % 这一步输出单元是否发生了跳变。
+        ChangeInfo = GoalSequence - GoalSequence_Hat;
     
         % Judge_X_m: 每一步用来判断哪侧先跳变，临时预计峰值位置。
-        Delta_HeapPos = ~[OriginStatus, GoalSequence(1: StepSum - 1)] * 2 * OutputH;
+        Delta_HeapPos = (OriginStatus - GoalSequence_Hat) * 2 * OutputH;
         Judge_X_mL = X_mL + Delta_HeapPos;
         Judge_X_mR = X_mR - Delta_HeapPos;
     
         % 优化函数
         GoalFunc_static = sym(0);
-        % 这一步输出单元是否发生了跳变。
-        ChangeInfo = GoalSequence - [OriginStatus, GoalSequence(1: StepSum - 1)];
+        
         % 力的差异与位移的差异权重之比，用来调整优化策略。
         
     
@@ -48,7 +50,7 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ca
             GoalFunc_static = GoalFunc_static + g_DisDiff + g_ForceDiff;
         end
         
-        CompSide = GoalSequence - [OriginStatus, GoalSequence(1: StepSum - 1)]; 
+        CompSide = ChangeInfo; 
         LeftComp = CompSide == -1;
         RightComp = CompSide == 1;
         
