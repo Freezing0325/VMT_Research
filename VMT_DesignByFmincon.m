@@ -3,7 +3,7 @@
 OriginStatus = 0;
 % 目标序列
 % GoalSequence = [1 0 0 1 0 1 1 1 0];
-GoalSequence = [0 1 0];
+GoalSequence = [0 1 0 1 0];
 StepSum = size(GoalSequence, 2);
 GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
 
@@ -41,6 +41,9 @@ for i = 2: StepSum
 end
 % 获得各个零势能点的位置
 global Output_h a;
+if (isempty(Output_h))
+    VMT_Init();
+end
 OutputH = Output_h / a;
 % OutputH = 0.0625;
 U_0 = [0, (1: StepSum) - CompSum * OutputH * 2];    

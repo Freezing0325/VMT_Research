@@ -14,6 +14,9 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ca
         % X_mL = double(subs(X_m(1, :), TempNormE, NormE));
         % X_mR = double(subs(X_m(2, :), TempNormE, NormE));
         global a Normal_h Output_h;
+        if (isempty(Output_h))
+            VMT_Init();
+        end
         OutputH = Output_h / a;
         H_0 = Normal_h / a;
         Comp_H_0 = H_0 - 2 * OutputH;

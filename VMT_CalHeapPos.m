@@ -9,6 +9,9 @@ function [RealEA_ka, HeapPos] = VMT_CalHeapPos(NormEA_ka, CompStatus, CalMethod,
     
 
     global a Normal_h CompPlus_h CompMinus_h;
+    if (isempty(Normal_h))
+        VMT_Init();
+    end
     NormalH_0 = Normal_h / a;     %0.5
     CompMinusH_0 = CompMinus_h / a;  %0.375
     CompPlusH_0 = CompPlus_h / a;   %0.625

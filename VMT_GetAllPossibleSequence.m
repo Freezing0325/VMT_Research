@@ -15,13 +15,13 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
     UnitSum = size(LeftNormE, 2);
     InactiveSum = UnitSum - ActiveSum;
 
-    AllSequence = zeros(1, 2^(ActiveSum)); %zeros(1, 2^(ActiveSum - 1));
-    BestInactive_Sequence = zeros(2^(ActiveSum), 2 * InactiveSum + 1);
+    AllSequence = zeros(1, 2^(ActiveSum+1)); %zeros(1, 2^(ActiveSum - 1));
+    BestInactive_Sequence = zeros(2^(ActiveSum+1), 2 * InactiveSum + 2);
     BestInactive_Sequence(:, 1) = 1;
-    ChangeRange = ones(InactiveSum * 2, 1) * [2, 1, UnitSum];
+    ChangeRange = ones(InactiveSum * 2, 1) * [1, 1, UnitSum];
     AllDesignSum = 0;
     OKDesignSum = 0;
-    if (size(FindSequence, 1) == 0 || ~exist('FindSequence', 'var'))
+    if (~exist('FindSequence', 'var') || size(FindSequence, 1) == 0)
         FindSequence = -ones(1, ActiveSum); % [1 0 1 0 1 0 1];
     end
     
@@ -45,13 +45,24 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
             continue;
         end
 
+        % 还要求两边的初始状态是可以保持平衡的。这要求计算两边未激活单元中补偿单元的数目。
+        LeftInactive = ThisCombination(1:InactiveSum);
+        RightInactive = ThisCombination(InactiveSum + 1: 2*InactiveSum);
+        FinalOriginStatus = OriginStatus - sum(LeftComp(LeftInactive)) + sum(RightComp(RightInactive));
+        if (FinalOriginStatus ~= 0 && FinalOriginStatus ~= 1)
+            continue;
+        end
+
         AllDesignSum = AllDesignSum + 1;
         ThisActiveStatus = ones(2, UnitSum);
         ThisActiveStatus(1, ThisCombination(1: InactiveSum)) = 0;
         ThisActiveStatus(2, ThisCombination(InactiveSum + 1: 2 * InactiveSum)) = 0;
-        [ThisSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, ThisActiveStatus);
-        if (MaxForceDiff < 1) %  && ThisSequence(1) == OriginStatus
+        [ThisSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, FinalOriginStatus, CalMethod, ThisActiveStatus);
+        if (MaxForceDiff < 1)
             OKDesignSum = OKDesignSum + 1;
+            if (ThisSequence(end) < 0)
+                ThisSequence(end) = floor(-ThisSequence(end) / 10);
+            end
             if (all(FindSequence == ThisSequence))
                 for i = 1: InactiveSum * 2
                     fprintf('%d ', ThisCombination(i));
@@ -59,14 +70,20 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
                 fprintf('\n');
             end
             ThisSequenceNo = 0;
+            ThisTrueSequence = 2*10^(ActiveSum+1) + FinalOriginStatus*10^(ActiveSum);
             for i = 1: ActiveSum
                 ThisSequenceNo = ThisSequenceNo + ThisSequence(i) * 2^(ActiveSum - i);
+                ThisTrueSequence = ThisTrueSequence + ThisSequence(i)*10^(ActiveSum-i); 
             end
             RealNo = ThisSequenceNo + 1;% -  2^(ActiveSum-1) + 1;
+            if (FinalOriginStatus ~= OriginStatus)
+                RealNo = RealNo + 2^ActiveSum;
+            end
             AllSequence(RealNo) = AllSequence(RealNo) + 1;
             if (MaxForceDiff < BestInactive_Sequence(RealNo, 1))
                 BestInactive_Sequence(RealNo, 1) = MaxForceDiff;
                 BestInactive_Sequence(RealNo, 2: 2 * InactiveSum + 1) = ThisCombination';
+                BestInactive_Sequence(RealNo, 2 * InactiveSum + 2) = ThisTrueSequence;
             end
         end
     end

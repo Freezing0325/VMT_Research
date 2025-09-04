@@ -15,6 +15,9 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
         X_mR = X_m(2, :);
 
         global a Normal_h OutputEA_ka Output_h Output_a;
+        if (isempty(Output_h))
+            VMT_Init();
+        end
         OutputH = Output_h / a;
         OutputL = Output_a / a;
         [OutputFm, ~] = VMT_SingleGetFm(OutputEA_ka, OutputH/OutputL, CalMethod);

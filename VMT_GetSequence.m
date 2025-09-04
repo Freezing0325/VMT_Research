@@ -11,11 +11,15 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNorm
 %   ActiveStatus    两侧单元激活情况，第一行为左侧，第二行为右侧。不输入时，认为所有单元均激活。
 %
 %   输出：[PredSequence, MaxForceDiff]
-%   PredSequence    预测的序列
+%   PredSequence
+%   预测的序列，如果出现-1，则说明在该位置尽管根据突跳顺序确实会发生状态切换，但由于补偿机制不对，切换只是暂时的。
 %   MaxForceDiff    会影响序列变化的最大的力差异，用输出单元的突跳最大力得到比值
 
     SingleSideComp = true;  % 仅进行单侧的补偿
     global a Normal_h OutputEA_ka Output_h Output_a;
+    if (isempty(Output_h))
+        VMT_Init();
+    end
     OutputH = Output_h / a;
     OutputL = Output_a / a;
     [OutputFm, ~] = VMT_SingleGetFm(OutputEA_ka, OutputH / OutputL, CalMethod);
@@ -27,8 +31,10 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNorm
     end
     LeftActiveStatus = ActiveStatus(1, :);
     RightActiveStatus = ActiveStatus(2, :);
-    LeftStepSum = sum(LeftActiveStatus ~= 0);
-    RightStepSum = sum(RightActiveStatus ~= 0);
+    LeftActiveIndex = find(LeftActiveStatus ~= 0);
+    RightActiveIndex = find(RightActiveStatus ~= 0);
+    LeftStepSum = size(LeftActiveIndex, 2);
+    RightStepSum = size(RightActiveIndex, 2);
     if (LeftStepSum ~= RightStepSum)
         error('左右两侧激活数不同！\n');
     end
@@ -39,9 +45,20 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNorm
     [~, HeapPos_Right] = VMT_CalHeapPos(RightNormEA_ka, RightComp, CalMethod, RightActiveStatus);
     NowStatus = OriginStatus;
     PredSequence = zeros(1, StepSum);
+    
     for i = 1: StepSum
         PredSequence(i) = HeapPos_Left(i) < HeapPos_Right(i) + 4 * OutputH * (NowStatus - OriginStatus);
-        NowStatus = PredSequence(i);
+        NowStatus = NowStatus + RightComp(RightActiveIndex(i)) - LeftComp(LeftActiveIndex(i));
+        NowStatus = min(max(NowStatus, 0), 1);
+        % 如果根据突跳顺序预测的状态与根据补偿单元预测的状态不一致
+        if (PredSequence(i) ~= NowStatus)
+            PredSequence(i) = -PredSequence(i) * 10 - NowStatus;
+        end
+    end
+    UnstableSwitchIndex = find(PredSequence < 0);
+    if (size(UnstableSwitchIndex,2) > 0 && UnstableSwitchIndex(1) ~= StepSum)
+        MaxForceDiff = 1;
+        return
     end
 
     CompInfo = [LeftComp; RightComp];
@@ -61,10 +78,11 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormEA_ka, RightNorm
         if (ChangeInfo(i) == 0)
             continue;
         end
+        ThisDis = 0;
         if (PredSequence(i) == 1)
             % 防止出现预先突跳
             ThisDis = ((Judge_HeapPos_L(i) - U_0(2, i)) / (Judge_HeapPos_R(i) - U_0(2, i)) * RightNormEA_ka(i) - LeftNormEA_ka(i)) * Fm / OutputFm;
-        else
+        elseif (PredSequence(i) == 0)
             ThisDis = ((Judge_HeapPos_R(i) - U_0(1, i)) / (Judge_HeapPos_L(i) - U_0(1, i)) * LeftNormEA_ka(i) - RightNormEA_ka(i)) * Fm / OutputFm;
         end
         MaxForceDiff = max(ThisDis, MaxForceDiff);

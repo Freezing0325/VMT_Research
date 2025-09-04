@@ -5,6 +5,9 @@ function [RealE, HeapPos] = VMT_CalHeapPos_2(NormE, CompStatus)
 %   CompStatus      补偿情况，1表示有补偿，0表示无补偿
 
     global a Normal_h CompPlus_h CompMinus_h;
+    if (isempty(Normal_h))
+        VMT_Init();
+    end
     NormalH_0 = Normal_h / a;     %0.5
     CompMinusH_0 = CompMinus_h / a;  %0.375
     CompPlusH_0 = CompPlus_h / a;   %0.625
