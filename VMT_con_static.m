@@ -1,5 +1,5 @@
 function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff)
-% Fmincon要满足的约束条件
+% Fmincon要满足的约束条件，g<=0,h=0
     global con_CallTimes con_RunTime;
     persistent g_static h_static;
     con_CallTimes = con_CallTimes + 1;
@@ -95,8 +95,8 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
     
         % MinNearETimes = 0.98;
         % g_NearETimes = [NormE(1: StepSum - 1) ./ NormE(2: StepSum), NormE(StepSum + 1: 2 * StepSum - 1) ./ NormE(StepSum + 2: 2 * StepSum)] - MinNearETimes;
-    
-        g_static = [g_StepWall.'; g_DisDiff.'; g_ForceDiff.'; g_FinalDisDiff];  %; g_NearETimes.'
+        % g_StepWall.'; 
+        g_static = [g_DisDiff.'; g_ForceDiff.'; g_FinalDisDiff];  %; g_NearETimes.'
         h_static = [];
     end
 

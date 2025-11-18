@@ -61,7 +61,7 @@ function [AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftN
         if (MaxForceDiff < 1)
             OKDesignSum = OKDesignSum + 1;
             if (ThisSequence(end) < 0)
-                ThisSequence(end) = floor(-ThisSequence(end) / 10);
+                ThisSequence(end) = mod(floor(-ThisSequence(end) / 10),10);
             end
             if (all(FindSequence == ThisSequence))
                 for i = 1: InactiveSum * 2

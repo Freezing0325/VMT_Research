@@ -133,3 +133,15 @@ F_app_sym = Func_1_nonlinear * U + Func_2_nonlinear * U^2 +  Func_3_nonlinear * 
 %[PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.348	1.61	4.368	4.486	4.553	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
 % [PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.348	1.61	4.368	4.486	4.924	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
 [PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.6	1.61 4.368	4.486	4.924	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
+
+%% 上升段斜率的大致估计
+VMT_Init();
+global a Normal_h Output_h Output_a;
+EA_ka = LeftNormE;
+UnitSum = size(EA_ka, 2);
+[RealEA_ka, HeapPos] = VMT_CalHeapPos(EA_ka, LeftComp, 2, []);
+HeapPos = HeapPos;
+Material_U0 = (0:UnitSum)*Normal_h/a*2;
+Fm = VMT_SingleGetFm(EA_ka(1), Normal_h/a, 2);
+EqStiffness = EA_ka/EA_ka(1)*Fm ./ (HeapPos - Material_U0(1:end-1));
+F_out_true = 2 * VMT_SingleGetFm(2.8821 * Output_a, Output_h / Output_a, 2);

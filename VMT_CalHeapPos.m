@@ -28,11 +28,14 @@ function [RealEA_ka, HeapPos] = VMT_CalHeapPos(NormEA_ka, CompStatus, CalMethod,
     if (~exist('ActiveStatus', 'var') || size(ActiveStatus, 1) == 0)
         ActiveStatus = ones(1, UnitSum);
     end
+    % 预压缩的位移，最后计算时要减掉
+    PreCompressU = 0;
     for i = 1: UnitSum
+        ThisComp = CompStatus(i);
         if (~ActiveStatus(i))
+            PreCompressU = PreCompressU + 2 * HMat(ThisComp + 2);
             continue;
         end
-        ThisComp = CompStatus(i);
         U_all = zeros(1, UnitSum);
         for j = 1: UnitSum
             if (j == i)
@@ -49,4 +52,5 @@ function [RealEA_ka, HeapPos] = VMT_CalHeapPos(NormEA_ka, CompStatus, CalMethod,
         TempHeapPos(i) = sum(U_all);
     end
     HeapPos = TempHeapPos(TempHeapPos > 0);
+    HeapPos = HeapPos - PreCompressU;
 end

@@ -60,7 +60,7 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ca
         RealE_Left = TempNormE(1: StepSum) .* (1 + (LeftComp * (Fm/Fm_Comp - 1)));
         RealE_Right = TempNormE(StepSum + 1: 2 * StepSum) .* (1 + (RightComp * (Fm/Fm_Comp - 1)));
         g_FinalDisDiff = max((VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)...
-                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), 0);
+                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), -4 * OutputH);
         GoalFunc_static = GoalFunc_static + g_FinalDisDiff * StepSum;
     end
 

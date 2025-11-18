@@ -3,7 +3,7 @@
 OriginStatus = 0;
 % 目标序列
 % GoalSequence = [1 0 0 1 0 1 1 1 0];
-GoalSequence = [0 1 0 1 0];
+GoalSequence = [0 1 0 1];
 StepSum = size(GoalSequence, 2);
 GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
 
@@ -100,6 +100,8 @@ toc(AllRunTime);
 %% 整理输出结果
 BestE_L = [1,BestE(1: StepSum - 1)];
 BestE_R = [1,BestE(StepSum: 2 * (StepSum - 1))];
+LeftNormE = BestE_L;
+RightNormE = BestE_R;
 [R_L, H_L] = VMT_CalHeapPos(BestE_L, LeftComp, CalMethod);
 [R_R, H_R] = VMT_CalHeapPos(BestE_R, RightComp, CalMethod);
 
@@ -127,13 +129,20 @@ end
 fprintf('\n');
 LeftComp = CompSide == -1;
 RightComp = CompSide == 1;
-[PredSequence, MaxForceDiff] = VMT_GetSequence(BestE_L, BestE_R , LeftComp, RightComp, OriginStatus, CalMethod, []);
+[PredSequence2, MaxForceDiff2] = VMT_GetSequence(BestE_L, BestE_R , LeftComp, RightComp, OriginStatus, CalMethod, []);
 fprintf('预期序列：\n');
 for i = 1: StepSum
-    fprintf('%d  ', PredSequence(i));
+    fprintf('%d  ', PredSequence2(i));
 end
 fprintf('\n');
-fprintf('最大力差异：%f\n', MaxForceDiff);
+fprintf('最大力差异：%f\n', MaxForceDiff2);
+
+global Normal_h
+H_0 = Normal_h / a;
+[Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
+FinalDisDiff = (VMT_ConnectedGetU(R_L, H_0 - LeftComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)...
+                        - VMT_ConnectedGetU(R_R, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
+fprintf('最终位移差异：%f\n', -FinalDisDiff/OutputH);
 
 All_E = roundn([BestE_L; BestE_R], -4);
 All_E_T = All_E.';
