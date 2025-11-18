@@ -1,13 +1,13 @@
-function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, CalMethod, MaxNormE)
+function GoalFunc = VMT_g_static(FullNormE, U_0, X_m, GoalSequence, OriginStatus, CalMethod, MaxNormE)
 % Fmincon要优化的目标函数
     global g_CallTimes g_RunTime;
     persistent GoalFunc_static;
-    g_CallTimes = g_CallTimes + 1;
+    
     ThisRunTime = tic;
     StepSum = size(X_m, 2);
     TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
-    
-    if (g_CallTimes == 1)
+
+    if (g_CallTimes == 0)
         % 代值，获得串联单元的峰值位置
         X_mL = X_m(1, :);
         X_mR = X_m(2, :);
@@ -37,19 +37,15 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ca
         % 力的差异与位移的差异权重之比，用来调整优化策略。
         
     
-        beta = 0.75;
+        beta = 0.5;
         for i = 1: StepSum
             g_DisDiff = atan((Judge_X_mL(i) - Judge_X_mR(i)) * (2 * GoalSequence(i) - 1)) * 2 / pi;
-            if (ChangeInfo(i) == 0)
-                g_ForceDiff = 0;
+            if (GoalSequence(i) == 1)
+                ThisDis = ((Judge_X_mL(i) - U_0(i)) * TempNormE(StepSum + i) / (Judge_X_mR(i) - U_0(i)) - TempNormE(i));
             else
-                if (GoalSequence(i) == 1)
-                    g_ForceDiff = beta * (max((Judge_X_mL(i) - U_0(i)) / (Judge_X_mR(i) - U_0(i)) * TempNormE(StepSum + i) - TempNormE(i), 0));
-                else
-                    g_ForceDiff = beta * (max((Judge_X_mR(i) - U_0(i)) / (Judge_X_mL(i) - U_0(i)) * TempNormE(i) - TempNormE(StepSum + i), 0));
-                end
-                %g_ForceDiff = g_ForceDiff;
+                ThisDis = (TempNormE(StepSum + i) - (Judge_X_mR(i) - U_0(i)) * TempNormE(i) / (Judge_X_mL(i) - U_0(i)));
             end
+            g_ForceDiff = beta * max(ThisDis * (1 - 2 * GoalSequence_Hat(i)), 0);
             GoalFunc_static = GoalFunc_static + g_DisDiff + g_ForceDiff;
         end
         
@@ -63,7 +59,8 @@ function GoalFunc = VMT_g_static(NormE, U_0, X_m, GoalSequence, OriginStatus, Ca
                         - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), -4 * OutputH);
         GoalFunc_static = GoalFunc_static + g_FinalDisDiff * StepSum;
     end
-
-    GoalFunc = double(subs(GoalFunc_static, TempNormE, NormE));
+    
+    GoalFunc = double(subs(GoalFunc_static, TempNormE, FullNormE));
+    g_CallTimes = g_CallTimes + 1;
     g_RunTime = g_RunTime + double(toc(ThisRunTime));
 end

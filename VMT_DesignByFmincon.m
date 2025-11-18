@@ -3,7 +3,7 @@
 OriginStatus = 0;
 % 目标序列
 % GoalSequence = [1 0 0 1 0 1 1 1 0];
-GoalSequence = [0 1 0 1];
+GoalSequence = [0 1 0 1 0 1 0 1 0];
 StepSum = size(GoalSequence, 2);
 GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
 
@@ -62,6 +62,7 @@ TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
 % 用符号表示的各个峰值位置，是归一化刚度的函数
 [~, X_mL] = VMT_CalHeapPos_2(TempNormE(1: StepSum), LeftComp);
 [~, X_mR] = VMT_CalHeapPos_2(TempNormE(StepSum + 1: 2 * StepSum), RightComp);
+X_m = [X_mL; X_mR];
 
 % A_SortE、B_SortE：要求归一化刚度是从小到大排列的，且相差至少为MinNormEDiff。
 %
@@ -90,9 +91,9 @@ g_CallTimes = 0;
 con_CallTimes = 0;
 fprintf('开始迭代计算，过程可能要很久。\n')
 AllRunTime = tic;
-[BestE, Bestg] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], U_0, [X_mL; X_mR], GoalSequence, OriginStatus, CalMethod, MaxNormE), ...
+[BestE, Bestg] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], U_0, X_m, GoalSequence, OriginStatus, CalMethod, MaxNormE), ...
                         BeginNormE, A_SortE, B_SortE, [], [], 1 * ones(1, 2 * (StepSum - 1)), MaxNormE * ones(1, 2 * (StepSum - 1)), ...
-                        @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], [X_mL; X_mR], GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff));
+                        @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], X_m, GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff));
 toc(AllRunTime);
 
 % QQ_Report('1603441246', 'Matlab算完了噢~');
@@ -142,7 +143,7 @@ H_0 = Normal_h / a;
 [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
 FinalDisDiff = (VMT_ConnectedGetU(R_L, H_0 - LeftComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)...
                         - VMT_ConnectedGetU(R_R, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
-fprintf('最终位移差异：%f\n', -FinalDisDiff/OutputH);
+fprintf('最终位移差异：%f\n', FinalDisDiff*(1-2*GoalSequence(end))/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
 
 All_E = roundn([BestE_L; BestE_R], -4);
 All_E_T = All_E.';

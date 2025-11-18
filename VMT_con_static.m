@@ -2,12 +2,12 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
 % Fmincon要满足的约束条件，g<=0,h=0
     global con_CallTimes con_RunTime;
     persistent g_static h_static;
-    con_CallTimes = con_CallTimes + 1;
+    
     ThisRunTime = tic;
     StepSum = size(X_m, 2);
     TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
     
-    if (con_CallTimes == 1)
+    if (con_CallTimes == 0)
 
         % 代值，获得串联单元的峰值位置
         
@@ -19,8 +19,8 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
             VMT_Init();
         end
         OutputH = Output_h / a;
-        OutputL = Output_a / a;
-        [OutputFm, ~] = VMT_SingleGetFm(OutputEA_ka, OutputH/OutputL, CalMethod);
+        OutputA = Output_a / a;
+        [OutputFm, OutputHm] = VMT_SingleGetFm(OutputEA_ka, OutputH/OutputA, CalMethod);
         H_0 = Normal_h / a;
         Comp_H_0 = H_0 - 2 * OutputH;
         
@@ -61,24 +61,26 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
     
         
         for i = 1: StepSum
-            if (ChangeInfo(i) == 0)
-                if (i > 1)
-                    if (GoalSequence(i) == 1)
-                        g_StepWall(i - 1) = Real_X_mR(i - 1) - Judge_X_mL(i) + MinStepWall;
-                    else
-                        g_StepWall(i - 1) = Real_X_mL(i - 1) - Judge_X_mR(i) + MinStepWall;
-                    end
-                end
-            else
+            if (i > 1 && ChangeInfo(i) == 0)
                 if (GoalSequence(i) == 1)
-                    AllForceDiff(i) = ((Judge_X_mL(i) - U_0(i)) / (Judge_X_mR(i) - U_0(i)) * TempNormE(StepSum + i) - TempNormE(i)) * Fm / OutputFm - MaxFDiff;
+                    g_StepWall(i - 1) = Real_X_mR(i - 1) - Judge_X_mL(i) + MinStepWall;
                 else
-                    AllForceDiff(i) = ((Judge_X_mR(i) - U_0(i)) / (Judge_X_mL(i) - U_0(i)) * TempNormE(i) - TempNormE(StepSum + i)) * Fm / OutputFm - MaxFDiff;
+                    g_StepWall(i - 1) = Real_X_mL(i - 1) - Judge_X_mR(i) + MinStepWall;
                 end
             end
+            k1 = TempNormE(i) / (Judge_X_mL(i) - U_0(i)) * Fm;
+            k2 = TempNormE(StepSum + i) / (Judge_X_mR(i) - U_0(i)) * Fm;
+            HmOutputFm = (k1 + k2) * (OutputH - OutputHm) + OutputFm;
+            if (GoalSequence(i) == 1)
+                ThisDis = ((Judge_X_mL(i) - U_0(i)) * k2 - TempNormE(i) * Fm) / HmOutputFm;
+            else
+                ThisDis = (TempNormE(StepSum + i) * Fm - (Judge_X_mR(i) - U_0(i)) * k1) / HmOutputFm;
+            end
+            ThisDis = ThisDis * (1 - 2 * GoalSequence_Hat(i));
+            AllForceDiff(i) = ThisDis - MaxFDiff;
         end
     
-        g_ForceDiff = AllForceDiff(AllForceDiff ~= 0);
+        g_ForceDiff = AllForceDiff;
         g_StepWall = g_StepWall(g_StepWall ~= 0);
     
         
@@ -102,7 +104,7 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
 
     g = double(subs(g_static, TempNormE, NormE));
     h = double(subs(h_static, TempNormE, NormE));
-    
+    con_CallTimes = con_CallTimes + 1;
     con_RunTime = con_RunTime + double(toc(ThisRunTime));
     
 end
