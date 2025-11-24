@@ -18,6 +18,10 @@ function [RealE, HeapPos] = VMT_CalHeapPos_2(NormE, CompStatus)
     
 
     CorrE = F_snap_Mat(2) ./ F_snap_Mat;
+    
+    [NormE, Index] = sort(NormE);
+    CompStatus = CompStatus(Index);
+
     RealE = NormE .* CorrE(CompStatus + 2);
 
     UnitSum = size(NormE, 2);
