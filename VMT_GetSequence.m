@@ -104,17 +104,20 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, L
         
         GeometryBalance = GeometryBalance + RightComp(RightActiveIndex(i)) - LeftComp(LeftActiveIndex(i));
         GeometryStatus = min(max(GeometryBalance, 0), 1);
-        U_0(:,i+1) = MaterialU_0(:,i+1) + [-1; 1] * (NowStatus-OriginStatus) * OutputH * 2;
         % 如果根据突跳顺序预测的状态与根据补偿单元预测的状态不一致
         ThisPredSeq = mod(abs(PredSequence(i)),10);
         if (ThisPredSeq ~= GeometryStatus)
             if (PredSequence(i) <= -300)
                 PredSequence(i) = PredSequence(i) * 1000 - (200 + ThisPredSeq * 10 + GeometryStatus);
-            else
+            elseif (i > 1)
                 PredSequence(i) = -(200 + ThisPredSeq * 10 + GeometryStatus);
+            else
+                PredSequence(i) = GeometryStatus;
+                ThisPredSeq = GeometryStatus;
             end
         end
         NowStatus = ThisPredSeq;
+        U_0(:,i+1) = MaterialU_0(:,i+1) + [-1; 1] * (NowStatus-OriginStatus) * OutputH * 2;
     end
     UnstableSwitchIndex = find(PredSequence < 0);
     if (size(UnstableSwitchIndex,2) > 0 && UnstableSwitchIndex(1) ~= StepSum)

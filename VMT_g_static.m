@@ -1,16 +1,27 @@
-function GoalFunc = VMT_g_static(FullNormE, U_0, X_m, GoalSequence, OriginStatus, CalMethod, MaxNormE)
+function GoalFunc = VMT_g_static(FullNormE, GoalSequence, OriginStatus, CalMethod, Optimizer)
 % Fmincon要优化的目标函数
     global g_CallTimes g_RunTime;
     persistent GoalFunc_static;
     
     ThisRunTime = tic;
-    StepSum = size(X_m, 2);
+    StepSum = size(GoalSequence, 2);
     TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
 
     if (g_CallTimes == 0)
-        % 代值，获得串联单元的峰值位置
-        X_mL = X_m(1, :);
-        X_mR = X_m(2, :);
+        GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
+        CompSide = GoalSequence - GoalSequence_Hat; 
+        LeftComp = CompSide == -1;
+        RightComp = CompSide == 1;
+        CompSum = abs(CompSide);
+        for i = 2: StepSum
+            CompSum(i) = CompSum(i - 1) + CompSum(i);
+        end
+        % 用符号表示的各个峰值位置，是归一化刚度的函数
+        [~, X_mL] = VMT_CalHeapPos_2(TempNormE(1: StepSum), LeftComp);
+        [~, X_mR] = VMT_CalHeapPos_2(TempNormE(StepSum + 1: 2 * StepSum), RightComp);
+        % X_m = [X_mL; X_mR];
+        % X_mL = X_m(1, :);
+        % X_mR = X_m(2, :);
         % X_mL = double(subs(X_m(1, :), TempNormE, NormE));
         % X_mR = double(subs(X_m(2, :), TempNormE, NormE));
         global a Normal_h Output_h;
@@ -19,6 +30,7 @@ function GoalFunc = VMT_g_static(FullNormE, U_0, X_m, GoalSequence, OriginStatus
         end
         OutputH = Output_h / a;
         H_0 = Normal_h / a;
+        U_0 = [0, 2*(1: StepSum)*H_0 - CompSum * OutputH * 2];
         Comp_H_0 = H_0 - 2 * OutputH;
         [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
         [Fm_Comp, ~] = VMT_SingleGetFm(1, Comp_H_0, CalMethod);
@@ -55,8 +67,8 @@ function GoalFunc = VMT_g_static(FullNormE, U_0, X_m, GoalSequence, OriginStatus
         
         RealE_Left = TempNormE(1: StepSum) .* (1 + (LeftComp * (Fm/Fm_Comp - 1)));
         RealE_Right = TempNormE(StepSum + 1: 2 * StepSum) .* (1 + (RightComp * (Fm/Fm_Comp - 1)));
-        g_FinalDisDiff = max((VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)...
-                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), -4 * OutputH);
+        g_FinalDisDiff = max((VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)...
+                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), -4 * OutputH);
         GoalFunc_static = GoalFunc_static + g_FinalDisDiff * StepSum;
     end
     

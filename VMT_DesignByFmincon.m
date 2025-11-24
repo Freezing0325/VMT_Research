@@ -3,31 +3,22 @@
 OriginStatus = 0;
 % 目标序列
 % GoalSequence = [1 0 0 1 0 1 1 1 0];
-GoalSequence = [0 1 0 1 0 1 0 1 0];
+GoalSequence = [0 1 1];
 StepSum = size(GoalSequence, 2);
 GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
-
-% 允许的最大归一化刚度
-MaxNormE = 8.29;
-
-% 允许的最小归一化刚度的差值，如果过小，在实际运行中，一侧的串联单元就不一定按照从小到大的顺序突跳
-MinNormEDiff = 0.1;
-% 允许的最小峰值点位置的差异，如果过小，在实际运行中，两侧的位移出现一定误差时就可能发生不同于设想的跳变，鲁棒性下降
-MinDisDiff = 0.1;
-% 允许的最小的两个bit位之间位置的差异，如果过小，在实际运行中就可能出现两个切换的位置相互混淆的结果。
-MinStepWall = 0.2;
-% 允许的最大的结束时的力差异，如果过大，那么在设计的序列切换结束后可能不稳定。
-MaxOutDisDiff = 0.0025;
-% 允许的最大的突跳前力差异与输出单元突跳阈值之比，如果过于超过1，那么有可能在串联单元突跳前就使输出单元突跳至另一状态，或者在不需要突跳的时候发生突跳。
-MaxFDiff = 1;
-
 CalMethod = 2;
-
-% 迭代开始的归一化刚度配置
-% BeginNormE = [1.5 2, 1.5 2];
-% BeginNormE = [1.5     2       2.5     3         3.5     4       4.5     5, ...
-%               1.5     2       2.5     3         3.5     4       4.5     5];
-BeginNormE = [1.5: 0.5: 1 + (StepSum - 1) * 0.5, 1.5: 0.5: 1 + (StepSum - 1) * 0.5];
+% 允许的最大归一化刚度
+Optimizer.MaxNormE = 8.29;
+% 允许的最小归一化刚度的差值，如果过小，在实际运行中，一侧的串联单元就不一定按照从小到大的顺序突跳
+Optimizer.MinNormEDiff = 0.1;
+% 允许的最小峰值点位置的差异，如果过小，在实际运行中，两侧的位移出现一定误差时就可能发生不同于设想的跳变，鲁棒性下降
+Optimizer.MinDisDiff = 0.05;
+% 允许的最小的两个bit位之间位置的差异，如果过小，在实际运行中就可能出现两个切换的位置相互混淆的结果。
+Optimizer.MinStepWall = 0.2;
+% 允许的最大的结束时的位移差异，如果过大，那么在设计的序列切换结束后可能不稳定。
+Optimizer.MaxOutDisDiff = 0.0025;
+% 允许的最大的突跳前力差异与输出单元突跳阈值之比，如果过于超过1，那么有可能在串联单元突跳前就使输出单元突跳至另一状态，或者在不需要突跳的时候发生突跳。
+Optimizer.MaxFDiff = 0.95;
 
 % 需要施加补偿的一侧，0：不需要，-1：左侧，1：右侧。
 CompSide = GoalSequence - GoalSequence_Hat; 
@@ -46,78 +37,34 @@ if (isempty(Output_h))
 end
 OutputH = Output_h / a;
 % OutputH = 0.0625;
-U_0 = [0, (1: StepSum) - CompSum * OutputH * 2];    
+U_0 = [0, (1: StepSum) - CompSum * OutputH * 2];  
+BeginNormE = [1.5: 0.5: 1 + (StepSum-1) * 0.5, 1.5: 0.5: 1 + (StepSum-1) * 0.5];
+[BestE, Bestg] = VMT_InverseDesign(GoalSequence, OriginStatus, CalMethod, BeginNormE, Optimizer);
 
-
-% 用来表示归一化刚度的符号矩阵
-% TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
-% TempNormE(1) = 1;
-% TempNormE(StepSum + 1) = 1;
-
-% 用来表示所有待求归一化刚度的符号矩阵
-NormE = sym('NormE_', [1, 2 * StepSum - 2]);
-NormE_Mat = [1, NormE(1: StepSum - 1); 1, NormE(StepSum: 2 * (StepSum - 1))];
-TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
-
-% 用符号表示的各个峰值位置，是归一化刚度的函数
-[~, X_mL] = VMT_CalHeapPos_2(TempNormE(1: StepSum), LeftComp);
-[~, X_mR] = VMT_CalHeapPos_2(TempNormE(StepSum + 1: 2 * StepSum), RightComp);
-X_m = [X_mL; X_mR];
-
-% A_SortE、B_SortE：要求归一化刚度是从小到大排列的，且相差至少为MinNormEDiff。
-%
-% A_SortE * NormE < B_SortE
-%
-% A_SortE_temp大致形状是：
-% [-1    0   0   ...     0]
-% [ 1   -1   0   ...     0]
-% [ 0    1  -1   ...     0]
-% [...  ... ...  ...    ..]
-% [ 0    0   0   ...    -1]
-% 这个矩阵组合成A_SortE：
-% [A_SortE_temp     0       ]
-% [     0       A_SortE_temp]
-% B_SortE大致形状是：
-% [-1 - M; -M; -M; ...; -M; -1 - M; -M; -M; ...; -M];
-
-A_SortE_temp = [zeros(1, StepSum - 1); eye(StepSum - 2), zeros(StepSum - 2, 1)] - eye(StepSum - 1);
-A_SortE = [A_SortE_temp, zeros(StepSum - 1); zeros(StepSum - 1), A_SortE_temp];
-B_SortE = [-1; zeros(StepSum - 2, 1); -1; zeros(StepSum - 2, 1)] - MinNormEDiff * ones(2 * (StepSum - 1), 1);
-
-global g_CallTimes con_CallTimes g_RunTime con_RunTime;
-g_RunTime = 0;
-con_RunTime = 0;
-g_CallTimes = 0;
-con_CallTimes = 0;
-fprintf('开始迭代计算，过程可能要很久。\n')
-AllRunTime = tic;
-[BestE, Bestg] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], U_0, X_m, GoalSequence, OriginStatus, CalMethod, MaxNormE), ...
-                        BeginNormE, A_SortE, B_SortE, [], [], 1 * ones(1, 2 * (StepSum - 1)), MaxNormE * ones(1, 2 * (StepSum - 1)), ...
-                        @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], X_m, GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff));
-toc(AllRunTime);
-
-% QQ_Report('1603441246', 'Matlab算完了噢~');
 
 %% 整理输出结果
-BestE_L = [1,BestE(1: StepSum - 1)];
-BestE_R = [1,BestE(StepSum: 2 * (StepSum - 1))];
-LeftNormE = BestE_L;
-RightNormE = BestE_R;
-[R_L, H_L] = VMT_CalHeapPos(BestE_L, LeftComp, CalMethod);
-[R_R, H_R] = VMT_CalHeapPos(BestE_R, RightComp, CalMethod);
+LeftNormE = [1,BestE(1: StepSum - 1)];
+RightNormE = [1,BestE(StepSum: 2 * (StepSum - 1))];
+BestNormE = [LeftNormE, RightNormE];
+FullNormE = BestNormE;
+BestMaxNormE = max(BestNormE);
 
+RealE = zeros(2, StepSum);
+HeapPos = zeros(2, StepSum);
+[RealE(1,:), HeapPos(1,:)] = VMT_CalHeapPos(LeftNormE, LeftComp, CalMethod);
+[RealE(2,:), HeapPos(2,:)] = VMT_CalHeapPos(RightNormE, RightComp, CalMethod);
+
+Judge_H = zeros(2, StepSum);
 Delta_HeapPos = (OriginStatus - GoalSequence_Hat) * 2 * OutputH;
-Judge_H_L = double(H_L + Delta_HeapPos);
-Judge_H_R = double(H_R - Delta_HeapPos);
-Judge_H = [Judge_H_L; Judge_H_R];
+Judge_H(1,:) = double(HeapPos(1,:) + Delta_HeapPos);
+Judge_H(2,:) = double(HeapPos(2,:) - Delta_HeapPos);
 ChangeInfo = CompSide;
 
-Real_H_L = double(Judge_H_L + (ChangeInfo == -1) * 2 * OutputH);
-Real_H_R = double(Judge_H_R + (ChangeInfo == 1) * 2 * OutputH);
-Real_H = [Real_H_L; Real_H_R];
+Real_H = zeros(2, StepSum);
+Real_H(1,:) = double(Judge_H(1,:) + (ChangeInfo == -1) * 2 * OutputH);
+Real_H(2,:) = double(Judge_H(2,:) + (ChangeInfo == 1) * 2 * OutputH);
 
-BestNormE = [BestE_L, BestE_R];
-RealE = [R_L, R_R];
+
 fprintf('归一化刚度：\n');
 for i = 1: 2 * StepSum
     fprintf('%.4f  ', BestNormE(i));
@@ -125,26 +72,26 @@ end
 fprintf('\n');
 fprintf('实际刚度：\n');
 for i = 1: 2 * StepSum
-    fprintf('%.4f  ', RealE(i));
+    fprintf('%.4f  ', RealE(floor((i-1)/StepSum)+1, mod(i-1,StepSum)+1));
 end
 fprintf('\n');
 LeftComp = CompSide == -1;
 RightComp = CompSide == 1;
-[PredSequence2, MaxForceDiff2] = VMT_GetSequence(BestE_L, BestE_R , LeftComp, RightComp, OriginStatus, CalMethod, []);
+[PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE , LeftComp, RightComp, OriginStatus, CalMethod, []);
 fprintf('预期序列：\n');
 for i = 1: StepSum
-    fprintf('%d  ', PredSequence2(i));
+    fprintf('%d  ', PredSequence(i));
 end
 fprintf('\n');
-fprintf('最大力差异：%f\n', MaxForceDiff2);
+fprintf('最大力差异：%f\n', MaxForceDiff);
 
 global Normal_h
 H_0 = Normal_h / a;
 [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
-FinalDisDiff = (VMT_ConnectedGetU(R_L, H_0 - LeftComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)...
-                        - VMT_ConnectedGetU(R_R, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
+FinalDisDiff = (VMT_ConnectedGetU(RealE(1,:), H_0 - LeftComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)...
+                        - VMT_ConnectedGetU(RealE(2,:), H_0 - RightComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
 fprintf('最终位移差异：%f\n', FinalDisDiff*(1-2*GoalSequence(end))/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
 
-All_E = roundn([BestE_L; BestE_R], -4);
+All_E = roundn(BestNormE, -4);
 All_E_T = All_E.';
 

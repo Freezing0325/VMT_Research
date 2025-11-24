@@ -1,18 +1,27 @@
-function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, CalMethod, MinDisDiff, MinStepWall, MaxNormE, MaxOutDisDiff, MaxFDiff)
+function [g, h] = VMT_con_static(FullNormE, GoalSequence, OriginStatus, CalMethod, Optimizer)
 % Fmincon要满足的约束条件，g<=0,h=0
     global con_CallTimes con_RunTime;
     persistent g_static h_static;
     
     ThisRunTime = tic;
-    StepSum = size(X_m, 2);
+    StepSum = size(GoalSequence, 2);
     TempNormE = sym('TempNormE_', [1, 2 * StepSum]);
     
     if (con_CallTimes == 0)
-
+        GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
+        CompSide = GoalSequence - GoalSequence_Hat; 
+        LeftComp = CompSide == -1;
+        RightComp = CompSide == 1;
+        CompSum = abs(CompSide);
+        for i = 2: StepSum
+            CompSum(i) = CompSum(i - 1) + CompSum(i);
+        end
+        [~, X_mL] = VMT_CalHeapPos_2(TempNormE(1: StepSum), LeftComp);
+        [~, X_mR] = VMT_CalHeapPos_2(TempNormE(StepSum + 1: 2 * StepSum), RightComp);
         % 代值，获得串联单元的峰值位置
         
-        X_mL = X_m(1, :);
-        X_mR = X_m(2, :);
+        % X_mL = X_m(1, :);
+        % X_mR = X_m(2, :);
 
         global a Normal_h OutputEA_ka Output_h Output_a;
         if (isempty(Output_h))
@@ -23,12 +32,12 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
         [OutputFm, OutputHm] = VMT_SingleGetFm(OutputEA_ka, OutputH/OutputA, CalMethod);
         H_0 = Normal_h / a;
         Comp_H_0 = H_0 - 2 * OutputH;
+        U_0 = [0, 2*(1: StepSum)*H_0 - CompSum * OutputH * 2];
         
         [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
         [Fm_Comp, ~] = VMT_SingleGetFm(1, Comp_H_0, CalMethod);
-        GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
         % 这一步输出单元是否发生了跳变。1:0→1,-1:1→0
-        ChangeInfo = GoalSequence - GoalSequence_Hat;
+        ChangeInfo = CompSide;
     
         % Judge_X_m: 每一步用来判断哪侧先跳变，临时预计峰值位置。实际的位置可能与此不同，因为输出单元的效应。
         Delta_HeapPos = (OriginStatus - GoalSequence_Hat) * 2 * OutputH;
@@ -41,7 +50,7 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
         
     
         % 第一个约束，对位移的约束：要求峰值位置和想要设计的变形序列相匹配，同时留下一定的容许误差空间MinDisDiff。
-        g_DisDiff = ((Judge_X_mL - Judge_X_mR) .* (GoalSequence * 2 - 1) + [0, MinDisDiff * ones(1, StepSum - 1)]);
+        g_DisDiff = ((Judge_X_mL - Judge_X_mR) .* (GoalSequence * 2 - 1) + [-0.1, Optimizer.MinDisDiff * ones(1, StepSum - 1)]);
     
         % 第二个约束，对相邻两个bit之间的位置的约束：要求每一个bit严格只有一个左侧和右侧单元发生突跳。
         % 序列发生变化的时候，不会有这方面的影响，但序列不变的时候，例如说要"保持"为1，其它的性质满足的条件是：
@@ -63,9 +72,9 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
         for i = 1: StepSum
             if (i > 1 && ChangeInfo(i) == 0)
                 if (GoalSequence(i) == 1)
-                    g_StepWall(i - 1) = Real_X_mR(i - 1) - Judge_X_mL(i) + MinStepWall;
+                    g_StepWall(i - 1) = Real_X_mR(i - 1) - Judge_X_mL(i) + Optimizer.MinStepWall;
                 else
-                    g_StepWall(i - 1) = Real_X_mL(i - 1) - Judge_X_mR(i) + MinStepWall;
+                    g_StepWall(i - 1) = Real_X_mL(i - 1) - Judge_X_mR(i) + Optimizer.MinStepWall;
                 end
             end
             k1 = TempNormE(i) / (Judge_X_mL(i) - U_0(i)) * Fm;
@@ -77,21 +86,16 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
                 ThisDis = (TempNormE(StepSum + i) * Fm - (Judge_X_mR(i) - U_0(i)) * k1) / HmOutputFm;
             end
             ThisDis = ThisDis * (1 - 2 * GoalSequence_Hat(i));
-            AllForceDiff(i) = ThisDis - MaxFDiff;
+            AllForceDiff(i) = ThisDis - Optimizer.MaxFDiff;
         end
     
         g_ForceDiff = AllForceDiff;
         g_StepWall = g_StepWall(g_StepWall ~= 0);
     
-        
-    
-        CompSide = GoalSequence - [OriginStatus, GoalSequence(1: StepSum - 1)]; 
-        LeftComp = CompSide == -1;
-        RightComp = CompSide == 1;
         RealE_Left = TempNormE(1: StepSum) .* (1 + (LeftComp * (Fm/Fm_Comp - 1)));
         RealE_Right = TempNormE(StepSum + 1: 2 * StepSum) .* (1 + (RightComp * (Fm/Fm_Comp - 1)));
-        g_FinalDisDiff = (VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)...
-                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)) - MaxOutDisDiff;
+        g_FinalDisDiff = (VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)...
+                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)) - Optimizer.MaxOutDisDiff;
     
         
     
@@ -102,8 +106,8 @@ function [g, h] = VMT_con_static(NormE, X_m, GoalSequence, OriginStatus, U_0, Ca
         h_static = [];
     end
 
-    g = double(subs(g_static, TempNormE, NormE));
-    h = double(subs(h_static, TempNormE, NormE));
+    g = double(subs(g_static, TempNormE, FullNormE));
+    h = double(subs(h_static, TempNormE, FullNormE));
     con_CallTimes = con_CallTimes + 1;
     con_RunTime = con_RunTime + double(toc(ThisRunTime));
     
