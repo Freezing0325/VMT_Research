@@ -62,6 +62,6 @@ function VMT_ReportConfig(fileID, BestE, GoalSequence, OriginStatus, CalMethod)
     [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
     FinalDisDiff = (VMT_ConnectedGetU(RealE(1,:), H_0 - LeftComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)...
                             - VMT_ConnectedGetU(RealE(2,:), H_0 - RightComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
-    fprintf(fileID, '最终位移差异：%f\n', FinalDisDiff*(1-2*GoalSequence(end))/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
+    fprintf(fileID, '最终位移差异：%f\n', FinalDisDiff/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
     
 end

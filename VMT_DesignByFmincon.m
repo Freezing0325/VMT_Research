@@ -3,7 +3,7 @@
 OriginStatus = 0;
 % 目标序列
 % GoalSequence = [1 0 0 1 0 1 1 1 0];
-GoalSequence = [0 1 1];
+GoalSequence = [0 1 1 1 1 1 1 1];
 StepSum = size(GoalSequence, 2);
 GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
 CalMethod = 2;
@@ -90,7 +90,7 @@ H_0 = Normal_h / a;
 [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
 FinalDisDiff = (VMT_ConnectedGetU(RealE(1,:), H_0 - LeftComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)...
                         - VMT_ConnectedGetU(RealE(2,:), H_0 - RightComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
-fprintf('最终位移差异：%f\n', FinalDisDiff*(1-2*GoalSequence(end))/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
+fprintf('最终位移差异：%f\n', FinalDisDiff/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
 
 All_E = roundn(BestNormE, -4);
 All_E_T = All_E.';
