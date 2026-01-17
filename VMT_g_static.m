@@ -24,11 +24,13 @@ function GoalFunc = VMT_g_static(FullNormE, GoalSequence, OriginStatus, CalMetho
         % X_mR = X_m(2, :);
         % X_mL = double(subs(X_m(1, :), TempNormE, NormE));
         % X_mR = double(subs(X_m(2, :), TempNormE, NormE));
-        global a Normal_h Output_h;
+        global a Normal_h Output_h OutputEA_ka Output_a;
         if (isempty(Output_h))
             VMT_Init();
         end
         OutputH = Output_h / a;
+        OutputA = Output_a / a;
+        [OutputFm, ~] = VMT_SingleGetFm(OutputEA_ka, OutputH/OutputA, CalMethod);
         H_0 = Normal_h / a;
         U_0 = [0, 2*(1: StepSum)*H_0 - CompSum * OutputH * 2];
         Comp_H_0 = H_0 - 2 * OutputH;
@@ -49,7 +51,7 @@ function GoalFunc = VMT_g_static(FullNormE, GoalSequence, OriginStatus, CalMetho
         % 力的差异与位移的差异权重之比，用来调整优化策略。
         
     
-        beta = 0.5;
+        beta = 0.2 / OutputFm;
         for i = 1: StepSum
             g_DisDiff = atan((Judge_X_mL(i) - Judge_X_mR(i)) * (2 * GoalSequence(i) - 1)) * 2 / pi;
             if (GoalSequence(i) == 1)
@@ -68,7 +70,7 @@ function GoalFunc = VMT_g_static(FullNormE, GoalSequence, OriginStatus, CalMetho
         RealE_Left = TempNormE(1: StepSum) .* (1 + (LeftComp * (Fm/Fm_Comp - 1)));
         RealE_Right = TempNormE(StepSum + 1: 2 * StepSum) .* (1 + (RightComp * (Fm/Fm_Comp - 1)));
         g_FinalDisDiff = max((VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)...
-                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), -4 * OutputH);
+                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)), 0);
         GoalFunc_static = GoalFunc_static + g_FinalDisDiff * StepSum;
     end
     

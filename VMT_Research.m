@@ -114,14 +114,20 @@ F_app_sym = Func_1_nonlinear * U + Func_2_nonlinear * U^2 +  Func_3_nonlinear * 
 
 % B
 % [PredSequence, MaxForceDiff] = VMT_GetSequence([1.661	1.905	2.334	6.755	10.823 12.826], [1.661	1.905	2.334	4.017	7.878 9.320], [0 1 1 1 1 1], [0 1 1 0 1 1], 1, 2, [])
-% [PredSequence, MaxForceDiff] = VMT_GetSequence([1.547	1.905	2.334	6.755	10.823 12.826], [1.661	1.905	2.334	5.02	8.820 9.320], [0 1 1 1 1 1], [0 1 1 0 1 1], 1, 2, [])
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([1.661	1.905	2.334	5.02	7.878 9.320]/1.545, [1.547	1.905	2.334	6.755	10.823 12.826]  /1.545, [0 1 1 0 1 1], [0 1 1 1 1 1], 0, 2, []);
+VMT_ReportConfig(1,[1	1.905	2.334	(2.490+6.441)/2	7.878 9.320 1	1.905	2.334	6.755	10.823 12.826]/1.547, [0 0 0 1 1 1; 0 1 1 0 1 1;0 1 1 1 1 1],0, 2);
 
 % R
 % [PredSequence, MaxForceDiff] = VMT_GetSequence([1	1.477	4.691	6.937	9.07	9.798], [1	1.477	2.085	6.937	9.32	12.826], [0 1 1 1 1 0], [0 1 0 1 1 1], 1, 2, [])
-% [PredSequence, MaxForceDiff] = VMT_GetSequence([1	1.477	4.691	7.879	9.07	9.798], [1	1.477	2.085	5.814	6.937	12.826], [0 1 1 1 1 0], [0 1 0 1 1 1], 1, 2, [])
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([1	1.477	4.691	7.879	9.07	9.798]/1.545, [1	1.477	2.085	5.814	6.937	12.826]/1.545, [0 1 1 1 1 0], [0 1 0 1 1 1], 1, 2, [])
+% VMT_ReportConfig(1,[1	1.477	4.691	6.937	9.07	9.798  1	1.477	3.093	5.814	6.937	12.826]/1.545, [1 1 0 0 0 1; 0 1 1 1 1 0;0 1 0 1 1 1],1 ,2);
 
 % G
-% [PredSequence, MaxForceDiff] = VMT_GetSequence([1.074	4.486	5.256	5.8645	6.3355	7.1595], [1	1.074	3.033	3.7595	7.1595	8.293], [0 1 1 1 0 1], [0 0 1 1 1 1], 1, 2, [])
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([1	1.074	3.033	3.7595	7.1595	8.293], [1.074	4.486	5.256	5.8645	6.3355	7.1595], [0 0 1 1 1 1], [0 1 1 1 0 1], 0, 2, []);
+% VMT_ReportConfig(1, [1	2.598	3.033	3.7595	7.1595	8.293   (0.646+1.074)/2	4.486	5.256	5.8645	6.3355	7.1595], [0 1 1 1 0 0;0 0 1 1 1 1;0 1 1 1 0 1], 0, 2); % 实验很难做
+% VMT_ReportConfig(1, [1	(2.598+1.348)/2	3.033	3.7595	7.1595	8.293   (0.646+1)/2	4.486	5.256	5.8645	6.3355	7.1595], [0 1 1 1 0 0;0 0 1 1 1 1;0 1 1 1 0 1], 0, 2);
+% VMT_ReportConfig(1, [1	(2.598+1.305)/2	3.033	3.7595	7.1595	8.293   0.646	3.486	4.256	5.8645	6.3355	7.1595], [0 1 1 1 0 0;0 0 1 1 1 1;0 1 1 1 0 1], 0, 2);
+
 
 % 10101010 Most Complex Rule
 % [PredSequence, MaxForceDiff] = VMT_GetSequence([1.477	1.547	3.513	3.940	8.129	8.246	12.826], [1	2.334	2.49	5.814	6.023	8.759	9.121], [1 0 1 0 1 0 1], [0 1 0 1 0 1 0], 1, 2, [])
@@ -132,8 +138,104 @@ F_app_sym = Func_1_nonlinear * U + Func_2_nonlinear * U^2 +  Func_3_nonlinear * 
 
 %[PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.348	1.61	4.368	4.486	4.553	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
 % [PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.348	1.61	4.368	4.486	4.924	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
-[PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.6	1.61 4.368	4.486	4.924	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
+%[PredSequence, MaxForceDiff] = VMT_GetSequence([1.000 	2.422 	2.598 	3.033 	6.026 	6.998 	8.293], [1.6	1.61 4.368	4.486	4.924	5.703	7.160], [0 1 0 1 1 1 1], [0 0 1 1 0 1 1], 1, 2, [])
+%
 
+%% 4阶段全部变形序列
+OriginStatus = 0;
+CalMethod = 2;
+% 0000 第一阶段有问题
+% LeftNormE = [0.647, 1.348, 1.610, 3.484];
+% RightNormE = [0.647, 1.074, 1.346, 3.078];
+% GoalSequence = [0 0 0 0];
+
+% 0001 第一阶段有问题
+% LeftNormE = [0.646 1.348 1.610 3.078];
+% RightNormE = [0.646 1.074 1.346 5.703];
+% GoalSequence = [0 0 0 1];
+
+% 0010 第一阶段有问题
+% LeftNormE = [0.646 1.346 2.363 5.703];
+% RightNormE = [0.646 1.074 3.033 3.484];
+% GoalSequence = [0 0 1 0];
+
+% 0011
+% LeftNormE = [0.646 1.610 2.363 2.598];
+% RightNormE = [0.646 1 3.033 3.894];
+% GoalSequence = [0 0 1 1];
+
+% 0100 最终位移不太好
+% LeftNormE = [0.646 1 3.033 3.484];
+% RightNormE = [0.646 1.509 2.597 3.078];
+% GoalSequence = [0 1 0 0];
+
+% 0110 最终位移不太好
+% LeftNormE = [0.646 1 1.610 5.073];
+% RightNormE = [0.646 1.509 2.336 2.597];
+% GoalSequence = [0 1 1 0];
+
+% 0111 第二段-3警告
+% LeftNormE = [0.646 (1.346+2.336)/2 2.363 4.165];
+% RightNormE = [0.646 3.033 3.484 6.769];
+% GoalSequence = [0 1 1 1];
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([0.646 1 2.363 2.598], [0.646 3.033 3.078 6.769], [0 0 0 0], [0 1 0 0], OriginStatus, CalMethod, [])
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([0.646 1 2.363 2.598], [0.646 1.509 3.078 6.769], [0 0 0 0], [0 1 0 0], OriginStatus, CalMethod, [])
+
+[LeftComp, RightComp] = VMT_GetComp(GoalSequence, OriginStatus);
+[PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, [])
+VMT_ReportConfig(1,[LeftNormE RightNormE], [GoalSequence; LeftComp;RightComp],OriginStatus, CalMethod);
+%% 9阶段超材料
+LeftNormE =[1   1.1314    3.6175    3.7243    4.6044    4.7107    5.7353    5.8426    7.3346];
+RightNormE = [1  1.3906    1.4911    4.0308    4.1332    5.0549    5.1577    6.2540    6.3573];
+LeftComp = [0 0 1 0 1 0 1 0 1];
+RightComp = [0 1 0 1 0 1 0 1 0];
+OriginStatus = 0;
+CalMethod = 2;
+[PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, [])
+%% 可调逻辑门 & 多路解码器 （会有-3警告）
+% 1→1→0
+LeftNormE =[1   (1.509+3.033)/2 8.293];
+RightNormE = [1  (1.850+3.033)/2 (2.363+3.484)/2];
+LeftComp = [0 1 1];
+RightComp = [0 1 0];
+OriginStatus = 1;
+CalMethod = 2;
+% [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, [])
+VMT_ReportConfig(1,[LeftNormE RightNormE], [1 1 0; LeftComp;RightComp],OriginStatus, CalMethod);
+% 0→1→1
+LeftNormE =[0.647   (1.348+1.610)/2 (6.026+3.033)/2];
+RightNormE = [0.647  6.026 8.293];
+% LeftNormE =[0.647   (1.948+1.610)/2 3.033];
+% RightNormE = [0.647  3.033 8.293];
+LeftComp = [0 0 1];
+RightComp = [0 1 1];
+OriginStatus = 0;
+% [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, [])
+VMT_ReportConfig(1,[LeftNormE RightNormE], [0 1 1; LeftComp;RightComp],OriginStatus, CalMethod);
+
+%% FPGA实验
+% 四阶段0→1→0→1 第四段-3警告
+OriginStatus = 0;
+CalMethod = 2;
+LeftNormE = [(0.646+1.114)/2 (1.346+1)/2 3.033 (3.484+6.769)/2];
+RightNormE = [1 (1.509+3.033)/2  2.336 (4.486+8.293)/2];
+GoalSequence = [0 1 0 1];
+[LeftComp, RightComp] = VMT_GetComp(GoalSequence, OriginStatus);
+% [PredSequence, MaxForceDiff] = VMT_GetSequence([0.646 1 3.033 (3.484+6.769)/2], [1 (1.509+3.033)/2  2.336 (4.486+8.293)/2], [0 0 1 0], [0 1 0 1], 0, 2, [])
+[PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod)
+VMT_ReportConfig(1,[LeftNormE RightNormE], [GoalSequence; LeftComp;RightComp],OriginStatus, CalMethod);
+%% FE FPGA
+% 五阶段0→1→0→1→0
+LeftNormE = [1 1.453 25.617/5.919 4.428 37.626/5.919];
+RightNormE = [1 10.838/5.919  1.931 29.318/5.919 5.053];
+LeftComp = [0 0 1 0 1];
+RightComp = [0 1 0 1 0];
+OriginStatus = 0;
+CalMethod = 2;
+ActiveSum = 3;
+FindSequence = [];
+[PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, []);
+[AllSequence, BestInactive_Sequence] = VMT_GetAllPossibleSequence(LeftNormE, RightNormE, LeftComp, RightComp, OriginStatus, CalMethod, ActiveSum, FindSequence);
 %% 上升段斜率的大致估计
 VMT_Init();
 global a Normal_h Output_h Output_a;

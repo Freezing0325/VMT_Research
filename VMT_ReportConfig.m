@@ -1,14 +1,17 @@
 function VMT_ReportConfig(fileID, BestE, GoalSequence, OriginStatus, CalMethod)
     StepSum = size(GoalSequence, 2);
-    GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
-    % 需要施加补偿的一侧，0：不需要，-1：左侧，1：右侧。
-    CompSide = GoalSequence - GoalSequence_Hat; 
-    LeftComp = CompSide == -1;
-    RightComp = CompSide == 1;
-    % CompSum(i)：前i个单元一共有几个补偿单元
-    CompSum = abs(CompSide);
-    for i = 2: StepSum
-        CompSum(i) = CompSum(i - 1) + CompSum(i);
+    if (size(GoalSequence,1) == 1)
+        GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
+        % 需要施加补偿的一侧，0：不需要，-1：左侧，1：右侧。
+        CompSide = GoalSequence - GoalSequence_Hat; 
+        LeftComp = CompSide == -1;
+        RightComp = CompSide == 1;
+    else
+        GoalSequence_Hat = [OriginStatus, GoalSequence(1, 1: StepSum - 1)];
+        LeftComp = GoalSequence(2, :);
+        RightComp = GoalSequence(3, :);
+        GoalSequence = GoalSequence(1, :);
+        CompSide = GoalSequence - GoalSequence_Hat; 
     end
     global Output_h a Normal_h;
     if (isempty(Output_h))
@@ -17,8 +20,14 @@ function VMT_ReportConfig(fileID, BestE, GoalSequence, OriginStatus, CalMethod)
     H_0 = Normal_h / a;
     OutputH = Output_h / a;
     
-    LeftNormE = [1,BestE(1: StepSum - 1)];
-    RightNormE = [1,BestE(StepSum: 2 * (StepSum - 1))];
+    if (size(BestE, 2) == 2 * (StepSum-1) && size(BestE, 1) == 1)
+        LeftNormE = [1,BestE(1: StepSum - 1)];
+        RightNormE = [1,BestE(StepSum: 2 * (StepSum - 1))];
+    else
+        TempBestE = BestE';
+        LeftNormE = TempBestE(1: StepSum)';
+        RightNormE = TempBestE(StepSum+1: 2*StepSum)';
+    end
     BestNormE = [LeftNormE, RightNormE];
     BestMaxNormE = max(BestNormE);
     
@@ -48,8 +57,7 @@ function VMT_ReportConfig(fileID, BestE, GoalSequence, OriginStatus, CalMethod)
         fprintf(fileID, '%.4f  ', RealE(floor((i-1)/StepSum)+1, mod(i-1,StepSum)+1));
     end
     fprintf(fileID, '\n');
-    LeftComp = CompSide == -1;
-    RightComp = CompSide == 1;
+
     [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE , LeftComp, RightComp, OriginStatus, CalMethod, []);
     fprintf(fileID, '预期序列：\n');
     for i = 1: StepSum

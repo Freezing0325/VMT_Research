@@ -84,8 +84,10 @@ function [PredSequence, MaxForceDiff] = VMT_GetSequence(LeftNormE, RightNormE, L
 
         
         if (PredSequence(i) == 1)   % 本次突跳左侧早于右侧
+            %ThisDis = (Judge_HeapPos_L(i) - U_0(2, i) - (OutputH - OutputHm)) * (k2 - k1) / HmOutputFm;
             ThisDis = ((Judge_HeapPos_L(i) - U_0(2, i)) * k2 - LeftNormE(LeftActiveIndex(i)) * Fm) / HmOutputFm;
         else % 本次突跳右侧早于左侧
+            %ThisDis = (Judge_HeapPos_R(i) - U_0(2, i) - (OutputH - OutputHm)) * (k2 - k1) / HmOutputFm;
             ThisDis = (RightNormE(RightActiveIndex(i)) * Fm - (Judge_HeapPos_R(i) - U_0(1, i)) * k1) / HmOutputFm;
         end
         % 当前状态为0时，压力差为负值安全；当前状态为1时，压力差为正值安全

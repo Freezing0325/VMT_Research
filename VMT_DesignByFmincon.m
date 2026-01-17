@@ -3,7 +3,7 @@
 OriginStatus = 0;
 % 目标序列
 % GoalSequence = [1 0 0 1 0 1 1 1 0];
-GoalSequence = [0 1 1 1 1 1 1 1];
+GoalSequence = [0 0 0 1 1 1];
 StepSum = size(GoalSequence, 2);
 GoalSequence_Hat = [OriginStatus, GoalSequence(1: StepSum - 1)];
 CalMethod = 2;
@@ -12,11 +12,13 @@ Optimizer.MaxNormE = 8.29;
 % 允许的最小归一化刚度的差值，如果过小，在实际运行中，一侧的串联单元就不一定按照从小到大的顺序突跳
 Optimizer.MinNormEDiff = 0.1;
 % 允许的最小峰值点位置的差异，如果过小，在实际运行中，两侧的位移出现一定误差时就可能发生不同于设想的跳变，鲁棒性下降
-Optimizer.MinDisDiff = 0.05;
+Optimizer.MinDisDiff = 0.1;
+% 对第一阶段峰值点位置差异的容许误差
+Optimizer.MinDisDiffFirstStage = -0.1;
 % 允许的最小的两个bit位之间位置的差异，如果过小，在实际运行中就可能出现两个切换的位置相互混淆的结果。
 Optimizer.MinStepWall = 0.2;
 % 允许的最大的结束时的位移差异，如果过大，那么在设计的序列切换结束后可能不稳定。
-Optimizer.MaxOutDisDiff = 0.0025;
+Optimizer.MaxOutDisDiff = 0;
 % 允许的最大的突跳前力差异与输出单元突跳阈值之比，如果过于超过1，那么有可能在串联单元突跳前就使输出单元突跳至另一状态，或者在不需要突跳的时候发生突跳。
 Optimizer.MaxFDiff = 0.95;
 

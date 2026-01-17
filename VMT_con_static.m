@@ -50,7 +50,7 @@ function [g, h] = VMT_con_static(FullNormE, GoalSequence, OriginStatus, CalMetho
         
     
         % 第一个约束，对位移的约束：要求峰值位置和想要设计的变形序列相匹配，同时留下一定的容许误差空间MinDisDiff。
-        g_DisDiff = ((Judge_X_mL - Judge_X_mR) .* (GoalSequence * 2 - 1) + [-0.1, Optimizer.MinDisDiff * ones(1, StepSum - 1)]);
+        g_DisDiff = ((Judge_X_mL - Judge_X_mR) .* (GoalSequence * 2 - 1) + [Optimizer.MinDisDiffFirstStage, Optimizer.MinDisDiff * ones(1, StepSum - 1)]);
     
         % 第二个约束，对相邻两个bit之间的位置的约束：要求每一个bit严格只有一个左侧和右侧单元发生突跳。
         % 序列发生变化的时候，不会有这方面的影响，但序列不变的时候，例如说要"保持"为1，其它的性质满足的条件是：
@@ -85,7 +85,7 @@ function [g, h] = VMT_con_static(FullNormE, GoalSequence, OriginStatus, CalMetho
             else
                 ThisDis = (TempNormE(StepSum + i) * Fm - (Judge_X_mR(i) - U_0(i)) * k1) / HmOutputFm;
             end
-            ThisDis = ThisDis * (1 - 2 * GoalSequence_Hat(i));
+            ThisDis = ThisDis * (1 - 2 * GoalSequence_Hat(i)) * (GoalSequence_Hat(i) == GoalSequence(i));
             AllForceDiff(i) = ThisDis - Optimizer.MaxFDiff;
         end
     
@@ -95,14 +95,11 @@ function [g, h] = VMT_con_static(FullNormE, GoalSequence, OriginStatus, CalMetho
         RealE_Left = TempNormE(1: StepSum) .* (1 + (LeftComp * (Fm/Fm_Comp - 1)));
         RealE_Right = TempNormE(StepSum + 1: 2 * StepSum) .* (1 + (RightComp * (Fm/Fm_Comp - 1)));
         g_FinalDisDiff = (VMT_ConnectedGetU(RealE_Left, H_0 - LeftComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)...
-                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)) - Optimizer.MaxOutDisDiff;
-    
-        
-    
-        % MinNearETimes = 0.98;
+                        - VMT_ConnectedGetU(RealE_Right, H_0 - RightComp * 2 * OutputH, Optimizer.MaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum)) / (2*OutputH) - Optimizer.MaxOutDisDiff;
+
         % g_NearETimes = [NormE(1: StepSum - 1) ./ NormE(2: StepSum), NormE(StepSum + 1: 2 * StepSum - 1) ./ NormE(StepSum + 2: 2 * StepSum)] - MinNearETimes;
         % g_StepWall.'; 
-        g_static = [g_DisDiff.'; g_ForceDiff.'; g_FinalDisDiff];  %; g_NearETimes.'
+        g_static = [g_DisDiff.'; g_ForceDiff.'; g_FinalDisDiff; g_StepWall.'];  %; g_NearETimes.'
         h_static = [];
     end
 
