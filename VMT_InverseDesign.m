@@ -37,11 +37,12 @@ function [BestE, Bestg] = VMT_InverseDesign(GoalSequence, OriginStatus, CalMetho
     % [A_SortE_temp     0       ]
     % [     0       A_SortE_temp]
     % B_SortE大致形状是：
-    % [-M; -M; -M; ...; -M; -M; -M; -M; ...; -M];
+    % [-1-M; -M; -M; ...; -M; -1-M; -M; -M; ...; -M];
     
     A_SortE_temp = [zeros(1, StepSum - 1); eye(StepSum - 2), zeros(StepSum - 2, 1)] - eye(StepSum - 1);
     A_SortE = [A_SortE_temp, zeros(StepSum - 1); zeros(StepSum - 1), A_SortE_temp];
-    B_SortE = [-1; zeros(StepSum - 2, 1); -1; zeros(StepSum - 2, 1)] - Optimizer.MinNormEDiff * ones(2 * (StepSum - 1), 1);
+    MinDisDiff_1 = -1 + Optimizer.MinNormEDiff - Optimizer.MinNormEDiffFirstStage;
+    B_SortE = [MinDisDiff_1; zeros(StepSum - 2, 1); MinDisDiff_1; zeros(StepSum - 2, 1)] - Optimizer.MinNormEDiff * ones(2 * (StepSum - 1), 1);
     global g_CallTimes con_CallTimes g_RunTime con_RunTime;
     g_RunTime = 0;
     con_RunTime = 0;
@@ -49,9 +50,10 @@ function [BestE, Bestg] = VMT_InverseDesign(GoalSequence, OriginStatus, CalMetho
     con_CallTimes = 0;
     fprintf('开始迭代计算，过程可能要很久。\n')
     AllRunTime = tic;
-    [BestE, Bestg] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], GoalSequence, OriginStatus, CalMethod, Optimizer), ...
+    options = optimoptions('fmincon', 'Algorithm','interior-point','EnableFeasibilityMode' ,true, 'SubproblemAlgorithm','cg');
+    [BestE, Bestg, exitflag, fmincon_output] = fmincon(@(NormE)VMT_g_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], GoalSequence, OriginStatus, CalMethod, Optimizer), ...
                             BeginNormE, A_SortE, B_SortE, [], [], 1 * ones(1, 2*StepSum-2), Optimizer.MaxNormE * ones(1, 2*StepSum-2), ...
-                            @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], GoalSequence, OriginStatus, CalMethod, Optimizer));
+                            @(NormE)VMT_con_static([1, NormE(1: StepSum - 1), 1, NormE(StepSum: 2 * (StepSum - 1))], GoalSequence, OriginStatus, CalMethod, Optimizer), options);
     toc(AllRunTime);
     
     % QQ_Report('1603441246', 'Matlab算完了噢~');

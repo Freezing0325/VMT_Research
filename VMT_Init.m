@@ -5,14 +5,13 @@ function VMT_Init(CalMode)
         end
     switch CalMode
         case 0
-        
             a = 35;
             Normal_h = 21.354;
             CompMinus_h = 11.368;
             CompPlus_h = 31.354;
             Output_h = 5;
             Output_a = 50;
-            OutputEA_ka = 2*2.8821/0.0931*Output_a/a;
+            OutputEA_ka = 2*2.8821/0.0647*Output_a/a;
             fprintf('实验模式参数设置完毕。\n');
         case 1
             a = 2;

@@ -45,9 +45,14 @@ function [RealEA_ka, HeapPos] = VMT_CalHeapPos(NormEA_ka, CompStatus, CalMethod,
             ThatComp = CompStatus(j);
             IsDown = (j < i) || (~ActiveStatus(j));
             U_all(j) = VMT_SingleGetU(RealEA_ka(j), HMat(ThatComp + 2), RealEA_ka(i) * F_snap_Mat(ThisComp + 2), IsDown, CalMethod);
-            if (~isreal(U_all(j)) || (j == i + 1 && ~IsDown))
-                U_all(j) = VMT_SingleGetU(RealEA_ka(j), HMat(ThatComp + 2), RealEA_ka(i) * F_snap_Mat(ThisComp + 2), IsDown, -CalMethod);
+            if (~isreal(U_all(j)) || (NormEA_ka(j) / NormEA_ka(i) < 1.3 && NormEA_ka(j) / NormEA_ka(i) > 1 && ~IsDown && CalMethod ~= 1 && CalMethod ~= 4))
+                U_all(j) = VMT_SingleGetU(RealEA_ka(j), HMat(ThatComp + 2), RealEA_ka(i) * F_snap_Mat(ThisComp + 2), 0, -CalMethod);
             end
+            % U_all(j) = min(U_all(j), 1.8);
+            % dispThre = 1.8;
+            % if (U_all(j) > dispThre)
+            %     U_all(j) = dispThre;
+            % end
         end
         TempHeapPos(i) = sum(U_all);
     end

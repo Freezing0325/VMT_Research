@@ -37,6 +37,15 @@ function [RealE, HeapPos] = VMT_CalHeapPos_2(NormE, CompStatus)
             end
             IfThatComp = CompStatus(j);
             IsDown = (j < i);
+            % U_all_j_2 = VMT_SingleGetU(RealE(j), HMat(IfThatComp + 2), RealE(i) * F_snap_Mat(IfThisComp + 2), IsDown, 2);
+            % if (IsDown)
+            % U_all(j) = U_all_j_2;
+            % else
+            %     U_all_j_1 = VMT_SingleGetU(RealE(j), HMat(IfThatComp + 2), RealE(i) * F_snap_Mat(IfThisComp + 2), 0, -2);
+            %     kEq_ratio = NormEA_ka(j) / NormEA_ka(i);
+            %     alpha_1 = 0.5 * tanh(40*(kEq_ratio - 1.25)) + 0.5;
+            %     U_all(j) = U_all_j_1 * (1-alpha_1) + U_all_j_2 * alpha_1;
+            % end
             if (j == i + 1)
                 U_all(j) = VMT_SingleGetU(RealE(j), HMat(IfThatComp + 2), RealE(i) * F_snap_Mat(IfThisComp + 2), 0, -2);
             else

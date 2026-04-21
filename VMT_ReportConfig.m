@@ -46,7 +46,8 @@ function VMT_ReportConfig(fileID, BestE, GoalSequence, OriginStatus, CalMethod)
     Real_H(1,:) = double(Judge_H(1,:) + (ChangeInfo == -1) * 2 * OutputH);
     Real_H(2,:) = double(Judge_H(2,:) + (ChangeInfo == 1) * 2 * OutputH);
     
-    
+
+
     fprintf(fileID, '归一化刚度：\n');
     for i = 1: 2 * StepSum
         fprintf(fileID, '%.4f  ', BestNormE(i));
@@ -65,11 +66,13 @@ function VMT_ReportConfig(fileID, BestE, GoalSequence, OriginStatus, CalMethod)
     end
     fprintf(fileID, '\n');
     fprintf(fileID, '最大力差异：%f\n', MaxForceDiff);
-    
+
+    [MinDispDiff, MDDIndex] = min(abs(Judge_H(1,2:end)-Judge_H(2,2:end)));
+    fprintf(fileID, '最小位移差异：%f，出现在第%d阶段\n', MinDispDiff, MDDIndex + 1);
     
     [Fm, ~] = VMT_SingleGetFm(1, H_0, CalMethod);
-    FinalDisDiff = (VMT_ConnectedGetU(RealE(1,:), H_0 - LeftComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)...
-                            - VMT_ConnectedGetU(RealE(2,:), H_0 - RightComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), 2)) * (1 - 2 * GoalSequence(StepSum));
+    FinalDisDiff = (VMT_ConnectedGetU(RealE(1,:), H_0 - LeftComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), CalMethod)...
+                            - VMT_ConnectedGetU(RealE(2,:), H_0 - RightComp * 2 * OutputH, BestMaxNormE * Fm, ones(1, StepSum), CalMethod)) * (1 - 2 * GoalSequence(StepSum));
     fprintf(fileID, '最终位移差异：%f\n', FinalDisDiff/OutputH); % 这个位移差异是考虑到最终状态时的结果，负值更稳定。
     
 end

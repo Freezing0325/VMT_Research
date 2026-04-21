@@ -13,7 +13,7 @@ function [Fm, Um] = VMT_SingleGetFm(EA_ka, H_0, CalMethod)
         case {1, 3}
             Fm = EA_ka .* 2/(3*sqrt(3)) .* H_0.^3 ./ sqrt(H_0.^2 + 1);
             Um = H_0 - H_0 ./ sqrt(2 * H_0.^2 + 3);
-        case 2
+        case {2, 4}
             Fm = 2 * EA_ka .* ((H_0.^2 + 1) .^ (1/3) - 1).^(3/2);
             Um = H_0 - ((H_0.^2 + 1) .^ (1/3) - 1) .^ (1/2);
     end
